@@ -14,17 +14,18 @@
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig } from '../config';
-import { openDb } from '../db/sqlite';
-import { ExplorerService } from '../services';
+import { ProjectStore } from '../db/projects';
+import { Workspace } from '../workspace';
 import { buildMcpServer } from './server';
 
 // MCP server over stdio, for local LLM clients (Claude Desktop / Claude Code). Logs go to stderr;
-// stdout carries the MCP protocol. See docs/mcp.md for client config.
+// stdout carries the MCP protocol. See docs/mcp.md.
 const config = loadConfig();
-const db = openDb(config.dataDir);
-const service = ExplorerService.fromConfig(config, db);
-const server = buildMcpServer(service, config);
+const store = new ProjectStore(config.dataDir, config.encryptionKey);
+const workspace = new Workspace(config.dataDir, store, config);
+workspace.seedFromEnv();
 
+const server = buildMcpServer(workspace, config);
 await server.connect(new StdioServerTransport());
 // eslint-disable-next-line no-console
 console.error('[jira-explorer] MCP stdio server ready');

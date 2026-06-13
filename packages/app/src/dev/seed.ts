@@ -14,12 +14,13 @@
 
 import type { Issue } from '@jira-explorer/shared';
 import { loadConfig } from '../config';
-import { openDb } from '../db/sqlite';
-import { CacheRepo, type StoredTree } from '../db/repositories';
+import { ProjectStore } from '../db/projects';
+import { Workspace } from '../workspace';
+import type { StoredTree } from '../db/repositories';
 import { computeCoverageProxy } from '../core/coverage';
 
-// Dev-only: seed a sample tree into the cache so the UI/mindmap can be exercised without a live
-// Jira. Run: DATA_DIR=./data-qa npx tsx packages/app/src/dev/seed.ts
+// Dev-only: create a seeded project so the UI/mindmap can be exercised without a live Jira.
+// Run: DATA_DIR=./data-qa npx tsx packages/app/src/dev/seed.ts
 
 const person = (n: string) => ({ displayName: n, initials: n.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase() });
 
@@ -35,23 +36,16 @@ const issue = (o: Partial<Issue> & Pick<Issue, 'key' | 'level' | 'summary'>): Is
 });
 
 const ROOT = 'PLAT-1042';
-
 const tree: StoredTree = {
   issues: [
-    issue({
-      key: ROOT,
-      level: 'requirement',
-      summary: 'Checkout supports saved payment methods',
-      status: 'In Progress',
-      statusCategory: 'in_progress',
+    issue({ key: ROOT, level: 'requirement', summary: 'Checkout supports saved payment methods', status: 'In Progress', statusCategory: 'in_progress',
       acceptanceCriteria: [
         { id: 'AC-1', text: 'Saved cards are tokenized' },
         { id: 'AC-2', text: 'One-click checkout for returning users' },
         { id: 'AC-3', text: 'Refund within 30 days' },
         { id: 'AC-4', text: 'PCI compliant storage' },
         { id: 'AC-5', text: 'Express pay button on cart' },
-      ],
-    }),
+      ] }),
     issue({ key: 'PLAT-1190', level: 'epic', summary: 'Tokenized card vault', status: 'In Progress', statusCategory: 'in_progress', deliveryDate: '2026-08-29', assignee: person('Leandro Abelli'), milestoneKeys: ['M-Q3'] }),
     issue({ key: 'PLAT-1191', level: 'epic', summary: 'One-click checkout flow', status: 'Review', statusCategory: 'in_progress', deliveryDate: '2026-07-30', assignee: person('Rosa Khan'), milestoneKeys: ['M-Q3'] }),
     issue({ key: 'PLAT-1192', level: 'epic', summary: 'PCI compliance review', status: 'To Do', statusCategory: 'todo', deliveryDate: '2026-10-15', assignee: person('Marco Tulio') }),
@@ -74,13 +68,17 @@ const tree: StoredTree = {
   ],
 };
 
-const db = openDb(loadConfig().dataDir);
-const repo = new CacheRepo(db);
+const config = loadConfig();
+const store = new ProjectStore(config.dataDir, config.encryptionKey);
+const ws = new Workspace(config.dataDir, store, config);
+const project = ws.createProject({ name: 'Demo (seeded)', baseUrl: 'https://jira.example.com', scope: { projectKeys: ['PLAT'], labels: [] } });
+const svc = ws.getService(project.id)!;
 const now = new Date().toISOString();
-repo.replaceTree(ROOT, tree, now);
-const req = tree.issues[0]!;
+svc.repo.replaceTree(ROOT, tree, now);
 const epics = tree.issues.filter((i) => i.level === 'epic');
-repo.recordCoverage(ROOT, ROOT, computeCoverageProxy(req, epics), now);
-repo.recordSyncRun({ rootKey: ROOT, issueCount: tree.issues.length, epicCount: epics.length, taskCount: 4, milestoneCount: 1, failedKeys: [], syncedAt: now });
+svc.repo.recordCoverage(ROOT, ROOT, computeCoverageProxy(tree.issues[0]!, epics), now);
+svc.repo.recordSyncRun({ rootKey: ROOT, issueCount: tree.issues.length, epicCount: epics.length, taskCount: 4, milestoneCount: 1, failedKeys: [], syncedAt: now });
+store.setLastSynced(project.id, now);
+ws.close();
 // eslint-disable-next-line no-console
-console.log(`seeded ${tree.issues.length} issues under ${ROOT} into ${loadConfig().dataDir}`);
+console.log(`seeded project "${project.name}" (${project.id}) with ${tree.issues.length} issues`);

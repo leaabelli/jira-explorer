@@ -33,3 +33,10 @@ export function openDb(dataDir: string): DB {
   mkdirSync(dataDir, { recursive: true });
   return createDb(join(dataDir, 'jira-explorer.sqlite'));
 }
+
+/** Open a per-project cache DB at <dataDir>/cache/<projectId>.sqlite. */
+export function openCacheDb(dataDir: string, projectId: string): DB {
+  const dir = join(dataDir, 'cache');
+  mkdirSync(dir, { recursive: true });
+  return createDb(join(dir, `${projectId}.sqlite`));
+}

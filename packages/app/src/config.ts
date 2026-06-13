@@ -16,6 +16,9 @@
 export interface AppConfig {
   port: number;
   dataDir: string;
+  /** secret used to encrypt stored PATs at rest (keep it OUT of the data volume) */
+  encryptionKey: string;
+  /** optional env-seeded default connection (creates a "Default" project on first run) */
   jira: { baseUrl?: string; pat?: string };
   mcp: { allowWrite: boolean; applyToJira: boolean };
 }
@@ -24,6 +27,7 @@ export function loadConfig(): AppConfig {
   return {
     port: Number(process.env.PORT ?? 3000),
     dataDir: process.env.DATA_DIR ?? './data',
+    encryptionKey: process.env.ENCRYPTION_KEY ?? 'dev-insecure-key-change-me',
     jira: { baseUrl: process.env.JIRA_BASE_URL, pat: process.env.JIRA_PAT },
     mcp: {
       allowWrite: process.env.MCP_ALLOW_WRITE !== 'false',

@@ -56,12 +56,17 @@ example I/O, and the safety model are in **[docs/mcp.md](docs/mcp.md)**.
 
 ## Configuration
 
-- **Connection:** `JIRA_BASE_URL` + `JIRA_PAT` (env). See `.env.example`.
-- **Scope:** project keys / labels / extra JQL, in `.env` or the UI.
+Everything is configured **in the app** — no `.env` editing required. A **project** is one saved
+Jira exploration; create as many as you like (different instances, teams, scopes) and switch
+between them. Each project owns its connection, scope, profile, and cache.
+
+- **Projects:** the sidebar switcher + ⚙ open a settings panel to set the **connection** (base URL,
+  PAT, with a Test button), **scope** (project keys / labels / extra JQL), and **profile**.
 - **Profile:** how Requirement/Epic/Task/Milestone map onto *your* Jira (issue types, link types,
   field ids, and — most importantly — **where acceptance criteria live**). The default guesses a
-  `## Acceptance Criteria` description section; tune it via the UI / `PUT /api/profile`. See
-  **[docs/sample-profile.json](docs/sample-profile.json)**.
+  `## Acceptance Criteria` description section. See **[docs/sample-profile.json](docs/sample-profile.json)**.
+- **Env (optional):** `JIRA_BASE_URL` + `JIRA_PAT` just seed a **"Default" project** on first run.
+  `ENCRYPTION_KEY` encrypts stored PATs at rest (keep it out of the data volume). See `.env.example`.
 
 ## How it works
 

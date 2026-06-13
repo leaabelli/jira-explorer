@@ -84,6 +84,13 @@ export const profileSchema = z.object({
   tracker: z.literal('jira-dc').default('jira-dc'),
   levels: z.array(levelSchema).min(1),
   milestone: milestoneConfigSchema.optional(),
+  /** tracker-specific knobs (instance-dependent, O4) */
+  jira: z
+    .object({
+      /** DC "Epic Link" custom field id, e.g. customfield_10014 */
+      epicLinkFieldId: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type IdentityRule = z.infer<typeof identityRuleSchema>;

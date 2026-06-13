@@ -29,8 +29,11 @@
 
 export { loadConfig, type AppConfig } from './config';
 export { ExplorerService } from './services';
-export { openDb, createDb, type DB } from './db/sqlite';
+export { Workspace } from './workspace';
+export { openDb, openCacheDb, createDb, type DB } from './db/sqlite';
 export { CacheRepo } from './db/repositories';
+export { ProjectStore } from './db/projects';
+export { encryptSecret, decryptSecret } from './db/crypto';
 export { JiraAdapter } from './jira/adapter';
 export type { TrackerAdapter } from './core/adapter';
 export { syncRoot, RootNotFoundError } from './sync/engine';

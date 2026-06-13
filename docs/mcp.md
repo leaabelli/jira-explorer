@@ -7,6 +7,15 @@ each acceptance criterion** (with citations), and optionally write changes back 
 Every tool wraps the same engine the web UI uses, so an LLM's reads/writes behave **identically**
 to the UI's.
 
+## Projects
+
+The tool serves multiple **projects** (saved Jira explorations, each with its own connection,
+scope, profile, and cache). Every tool takes an optional `projectId` (from `list_projects`) and
+**defaults to the first project**. On first run a `Default` project is seeded from
+`JIRA_BASE_URL`/`JIRA_PAT` if set.
+
+- `list_projects` — `[ { "id": "...", "name": "Default", "baseUrl": "...", "lastSyncedAt": "..." } ]`
+
 ---
 
 ## Two ways to run it

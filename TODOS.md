@@ -18,6 +18,18 @@ interaction states first. Pick up before a 1.0 / wider OSS release.
   fallback. See `DESIGN.md` → "Accessibility & responsive".
 - **Depends on:** P4 (mindmap) exists.
 
+### T-PROFILE-EDITOR — Structured visual profile editor
+- **What:** The project settings panel edits the Profile as raw JSON (advanced). Add a structured
+  editor: per-level issue types, parent-link kind (epic-link / issue-link + type + direction),
+  the acceptance-criteria source (the O1 knob) as a dropdown, and the Epic-Link field id.
+- **Why:** JSON is fine for power users but intimidating for everyday config; the AC source is the
+  load-bearing setting and deserves a guided control.
+- **Pros:** Lower-friction config; fewer malformed-profile errors.
+- **Cons:** A fair amount of form UI; the JSON editor already works.
+- **Context:** Connection + scope are already structured; only the Profile is JSON. See
+  `web/src/components/ProjectSettings.tsx` and `docs/sample-profile.json`.
+- **Depends on:** multi-project config UI (done).
+
 ### T-INCREMENTAL-SYNC — Incremental refresh by `updated`
 - **What:** Replace full re-sync with an incremental path: track last-sync time, refresh via JQL
   `updated >= lastSync`, upsert only changes, and correctly reconcile deletions / scope changes /

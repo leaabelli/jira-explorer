@@ -18,29 +18,30 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { loadConfig } from '../config';
-import { openDb } from '../db/sqlite';
-import { ExplorerService } from '../services';
+import { ProjectStore } from '../db/projects';
+import { Workspace } from '../workspace';
 import { buildMcpServer } from '../mcp/server';
 import { buildRouter } from './routes';
 
 const config = loadConfig();
-const db = openDb(config.dataDir);
-const service = ExplorerService.fromConfig(config, db);
+const store = new ProjectStore(config.dataDir, config.encryptionKey);
+const workspace = new Workspace(config.dataDir, store, config);
+workspace.seedFromEnv(); // create a "Default" project from JIRA_BASE_URL/PAT on first run
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, version: '0.1.0', jiraConfigured: Boolean(config.jira.baseUrl) });
+  res.json({ ok: true, version: '0.1.0', projects: store.list().length });
 });
 
-app.use('/api', buildRouter(service));
+app.use('/api', buildRouter(workspace));
 
-// MCP over Streamable HTTP (stateless): each request gets its own server+transport. Local LLM
-// clients can also use the stdio entry (npm run mcp:stdio). See docs/mcp.md.
+// MCP over Streamable HTTP (stateless). Local LLM clients can also use the stdio entry
+// (npm run mcp:stdio). See docs/mcp.md.
 app.post('/mcp', async (req, res) => {
-  const mcp = buildMcpServer(service, config);
+  const mcp = buildMcpServer(workspace, config);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on('close', () => {
     void transport.close();
