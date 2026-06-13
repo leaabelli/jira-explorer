@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+packages/web/dist
+data
+data-qa
+data-smoke
+.git
+*.sqlite
+*.sqlite-*
+.env
+.env.local

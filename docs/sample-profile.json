@@ -1,0 +1,40 @@
+{
+  "_comment": "Active Profile shape. PUT this to /api/profile (or edit in the UI) to map the abstract Requirement/Epic/Task/Milestone model onto YOUR Jira. The acceptanceCriteria source is the load-bearing setting (open question O1): tell the tool where your criteria live.",
+  "tracker": "jira-dc",
+  "levels": [
+    {
+      "key": "requirement",
+      "displayName": "Requirement",
+      "identity": { "issueTypes": ["Requirement"], "labels": ["requirement"] },
+      "acceptanceCriteria": {
+        "_options": "Pick ONE: description-section | custom-field | checklist-field | none",
+        "kind": "description-section",
+        "heading": "Acceptance Criteria"
+      }
+    },
+    {
+      "key": "epic",
+      "displayName": "Epic",
+      "identity": { "issueTypes": ["Epic"] },
+      "parentLink": {
+        "_comment": "How an epic links to its requirement",
+        "kind": "issue-link",
+        "linkType": "implements",
+        "direction": "outward"
+      }
+    },
+    {
+      "key": "task",
+      "displayName": "Task",
+      "identity": { "issueTypes": ["Task", "Story", "Sub-task", "Bug"] },
+      "parentLink": {
+        "_comment": "Classic Jira DC 'Epic Link' custom field",
+        "kind": "epic-link"
+      }
+    }
+  ],
+  "milestone": {
+    "identity": { "issueTypes": ["Milestone"] },
+    "link": { "kind": "issue-link", "linkType": "includes", "direction": "outward" }
+  }
+}
