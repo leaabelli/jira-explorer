@@ -13,3 +13,6 @@ data/
 coverage/
 packages/web/dist/
 .gstack/
+
+data-qa/
+data-smoke/
