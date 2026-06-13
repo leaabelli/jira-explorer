@@ -12,9 +12,11 @@
  * GNU General Public License for more details.
  */
 
-// @jira-explorer/shared — browser-safe domain types, Zod schemas, and API DTOs
-// shared across core (node), mcp, server, and web. MUST NOT import node-only deps.
+// @jira-explorer/shared — browser-safe domain types, Zod schemas, and API DTOs.
+// MUST NOT import node-only deps (used by core, mcp, server, AND the web bundle).
 
 export const SHARED_VERSION = '0.1.0';
 
-// Real exports are added in P1 (domain/profile) and P3 (API DTOs).
+export * from './domain';
+export * from './profile';
+export * from './api';
