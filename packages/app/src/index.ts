@@ -28,5 +28,12 @@
 // reads/writes behave identically to the UI's.
 
 export { loadConfig, type AppConfig } from './config';
+export { ExplorerService } from './services';
+export { openDb, createDb, type DB } from './db/sqlite';
+export { CacheRepo } from './db/repositories';
+export { JiraAdapter } from './jira/adapter';
+export type { TrackerAdapter } from './core/adapter';
+export { syncRoot, RootNotFoundError } from './sync/engine';
+export { buildHierarchy } from './sync/hierarchy';
 
 export const APP_VERSION = '0.1.0';

@@ -229,4 +229,17 @@ export class CacheRepo {
       )
       .all() as Array<{ rootKey: string; syncedAt: string }>;
   }
+
+  getSetting<T>(key: string): T | undefined {
+    const row = this.db.prepare('SELECT value_json FROM settings WHERE key = ?').get(key) as
+      | { value_json: string }
+      | undefined;
+    return row ? (JSON.parse(row.value_json) as T) : undefined;
+  }
+
+  setSetting(key: string, value: unknown): void {
+    this.db
+      .prepare('INSERT OR REPLACE INTO settings (key, value_json) VALUES (?, ?)')
+      .run(key, JSON.stringify(value));
+  }
 }
