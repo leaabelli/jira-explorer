@@ -15,6 +15,8 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Mindmap } from './mindmap/Mindmap';
+import { Inspector } from './inspector/Inspector';
+import { useMindmap } from './mindmap/store';
 import { api } from './api';
 
 export function App() {
@@ -46,9 +48,15 @@ export function App() {
   }, [activeRoot, roots.data]);
 
   const connOk = connection.data?.ok;
+  const selected = useMindmap((s) => s.selected);
+  const showInspector = !!selected && !!hierarchy.data;
 
   return (
-    <div className="grid h-screen grid-cols-[280px_1fr] overflow-hidden bg-[#f6f7f9] font-sans text-[#1a1d21]">
+    <div
+      className={`grid h-screen overflow-hidden bg-[#f6f7f9] font-sans text-[#1a1d21] ${
+        showInspector ? 'grid-cols-[280px_1fr_340px]' : 'grid-cols-[280px_1fr]'
+      }`}
+    >
       <aside className="flex flex-col gap-5 overflow-auto border-r border-[#e4e7eb] bg-white p-4">
         <div className="flex items-center gap-2">
           <span className="h-5 w-5 rounded bg-[#0f766e]" />
@@ -135,6 +143,8 @@ export function App() {
           </div>
         )}
       </main>
+
+      {showInspector && <Inspector hierarchy={hierarchy.data!} />}
     </div>
   );
 }
