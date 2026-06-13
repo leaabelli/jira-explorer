@@ -16,9 +16,11 @@ import express from 'express';
 import cors from 'cors';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { loadConfig } from '../config';
 import { openDb } from '../db/sqlite';
 import { ExplorerService } from '../services';
+import { buildMcpServer } from '../mcp/server';
 import { buildRouter } from './routes';
 
 const config = loadConfig();
@@ -34,6 +36,23 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api', buildRouter(service));
+
+// MCP over Streamable HTTP (stateless): each request gets its own server+transport. Local LLM
+// clients can also use the stdio entry (npm run mcp:stdio). See docs/mcp.md.
+app.post('/mcp', async (req, res) => {
+  const mcp = buildMcpServer(service, config);
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  res.on('close', () => {
+    void transport.close();
+    void mcp.close();
+  });
+  try {
+    await mcp.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch {
+    if (!res.headersSent) res.status(500).json({ error: 'mcp error', code: 'unknown' });
+  }
+});
 
 // In production the built web app is served from here; in dev, Vite serves it with an /api proxy.
 const webDist = fileURLToPath(new URL('../../../web/dist', import.meta.url));

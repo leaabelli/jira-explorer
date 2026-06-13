@@ -12,9 +12,19 @@
  * GNU General Public License for more details.
  */
 
-// MCP server, stdio transport — for local LLM clients (Claude Desktop / Claude Code).
-// Domain tools (get_hierarchy, get_requirement_coverage, update_epic, transition_issue, sync)
-// are registered in P7, wrapping the same engine the REST server uses.
-//
-// Note: logs go to stderr — stdout is reserved for the MCP protocol stream.
-console.error('[jira-explorer] MCP stdio entry — domain tools land in P7');
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { loadConfig } from '../config';
+import { openDb } from '../db/sqlite';
+import { ExplorerService } from '../services';
+import { buildMcpServer } from './server';
+
+// MCP server over stdio, for local LLM clients (Claude Desktop / Claude Code). Logs go to stderr;
+// stdout carries the MCP protocol. See docs/mcp.md for client config.
+const config = loadConfig();
+const db = openDb(config.dataDir);
+const service = ExplorerService.fromConfig(config, db);
+const server = buildMcpServer(service, config);
+
+await server.connect(new StdioServerTransport());
+// eslint-disable-next-line no-console
+console.error('[jira-explorer] MCP stdio server ready');
