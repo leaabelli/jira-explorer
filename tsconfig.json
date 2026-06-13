@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["packages/shared/src", "packages/app/src"],
+  "exclude": ["**/*.test.ts"]
+}
