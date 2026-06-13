@@ -31,6 +31,7 @@ import type { DB } from './db/sqlite';
 import { JiraAdapter } from './jira/adapter';
 import { syncRoot } from './sync/engine';
 import { buildHierarchy } from './sync/hierarchy';
+import { toContextMarkdown, toCoverageSummary, toJsonExport, toStaticHtml } from './export';
 
 // The single engine API that BOTH the REST server and the MCP server wrap, so an LLM's
 // reads/writes behave identically to the UI's. Profile + scope persist in the settings table
@@ -95,6 +96,31 @@ export class ExplorerService {
   }
   coverageDrift(requirementKey: string): CoverageSnapshot[] {
     return this.repo.coverageHistory(requirementKey);
+  }
+
+  // --- export (req #6) + E3/E4 ---
+  exportContext(
+    rootKey: string,
+    format: 'md' | 'json',
+  ): { body: string; contentType: string; filename: string } | null {
+    const h = this.getHierarchy(rootKey);
+    if (!h) return null;
+    if (format === 'json') {
+      return {
+        body: JSON.stringify(toJsonExport(h), null, 2),
+        contentType: 'application/json',
+        filename: `${rootKey}.json`,
+      };
+    }
+    return { body: toContextMarkdown(h), contentType: 'text/markdown', filename: `${rootKey}.md` };
+  }
+  coverageSummary(rootKey: string): string | null {
+    const h = this.getHierarchy(rootKey);
+    return h ? toCoverageSummary(h) : null;
+  }
+  staticHtml(rootKey: string): string | null {
+    const h = this.getHierarchy(rootKey);
+    return h ? toStaticHtml(h) : null;
   }
 
   // --- writes ---

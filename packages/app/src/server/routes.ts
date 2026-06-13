@@ -73,6 +73,26 @@ export function buildRouter(service: ExplorerService): Router {
 
   r.get('/coverage/:key/drift', (req, res) => res.json(service.coverageDrift(req.params.key!)));
 
+  r.get('/coverage/:key/summary', (req, res) => {
+    const summary = service.coverageSummary(req.params.key!);
+    if (summary === null) return res.status(404).json({ error: 'not synced', code: 'not_found' });
+    return res.type('text/plain').send(summary);
+  });
+
+  r.get('/export/:rootKey', (req, res) => {
+    const format = req.query.format === 'json' ? 'json' : 'md';
+    const out = service.exportContext(req.params.rootKey!, format);
+    if (!out) return res.status(404).json({ error: 'not synced', code: 'not_found' });
+    res.setHeader('Content-Disposition', `attachment; filename="${out.filename}"`);
+    return res.type(out.contentType).send(out.body);
+  });
+
+  r.get('/map/:rootKey/html', (req, res) => {
+    const html = service.staticHtml(req.params.rootKey!);
+    if (html === null) return res.status(404).json({ error: 'not synced', code: 'not_found' });
+    return res.type('text/html').send(html);
+  });
+
   r.put(
     '/epic/:key',
     wrap(async (req, res) => {

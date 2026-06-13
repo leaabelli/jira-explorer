@@ -19,6 +19,44 @@ import { Inspector } from './inspector/Inspector';
 import { useMindmap } from './mindmap/store';
 import { api } from './api';
 
+function ExportPanel({ rootKey }: { rootKey: string }) {
+  const [copied, setCopied] = useState(false);
+  const open = (path: string) => window.open(path, '_blank');
+  const copy = async () => {
+    const res = await fetch(`/api/coverage/${encodeURIComponent(rootKey)}/summary`);
+    const text = await res.text();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      window.prompt('Copy the coverage summary:', text);
+    }
+  };
+  const btn =
+    'rounded border border-[#d3d8de] bg-white px-2 py-1 text-left text-xs font-medium text-[#1a1d21] hover:bg-[#f8f9fb]';
+  const enc = encodeURIComponent(rootKey);
+  return (
+    <div>
+      <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[#8b95a3]">Export</div>
+      <div className="flex flex-col gap-1.5">
+        <button className={btn} onClick={() => open(`/api/export/${enc}?format=md`)}>
+          Export for LLM (.md)
+        </button>
+        <button className={btn} onClick={() => open(`/api/export/${enc}?format=json`)}>
+          Export JSON
+        </button>
+        <button className={btn} onClick={() => open(`/api/map/${enc}/html`)}>
+          Open HTML map
+        </button>
+        <button className={btn} onClick={copy}>
+          {copied ? 'Copied ✓' : 'Copy coverage summary'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const qc = useQueryClient();
   const [rootInput, setRootInput] = useState('');
@@ -118,6 +156,8 @@ export function App() {
             </div>
           </div>
         )}
+
+        {activeRoot && <ExportPanel rootKey={activeRoot} />}
       </aside>
 
       <main className="relative overflow-hidden">
