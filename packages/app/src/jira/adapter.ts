@@ -49,6 +49,9 @@ export class JiraAdapter implements TrackerAdapter {
   }
 
   async testConnection(): Promise<ConnectionStatus> {
+    if (!this.mapOpts.baseUrl) {
+      return { ok: false, error: 'Jira not configured — set JIRA_BASE_URL and JIRA_PAT' };
+    }
     try {
       const me = await this.client.myself();
       return { ok: true, user: me.displayName, baseUrl: this.mapOpts.baseUrl };

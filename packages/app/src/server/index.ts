@@ -14,23 +14,33 @@
 
 import express from 'express';
 import cors from 'cors';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { loadConfig } from '../config';
+import { openDb } from '../db/sqlite';
+import { ExplorerService } from '../services';
+import { buildRouter } from './routes';
 
-// REST API + (later) serves the built web app and mounts MCP-over-HTTP.
-// P0: a health endpoint so we can prove the server boots end to end.
 const config = loadConfig();
-const app = express();
+const db = openDb(config.dataDir);
+const service = ExplorerService.fromConfig(config, db);
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
-  res.json({
-    ok: true,
-    version: '0.1.0',
-    jiraConfigured: Boolean(config.jira.baseUrl),
-  });
+  res.json({ ok: true, version: '0.1.0', jiraConfigured: Boolean(config.jira.baseUrl) });
 });
+
+app.use('/api', buildRouter(service));
+
+// In production the built web app is served from here; in dev, Vite serves it with an /api proxy.
+const webDist = fileURLToPath(new URL('../../../web/dist', import.meta.url));
+if (existsSync(webDist)) {
+  app.use(express.static(webDist));
+  app.get('*', (_req, res) => res.sendFile(fileURLToPath(new URL('index.html', `file://${webDist}/`))));
+}
 
 app.listen(config.port, () => {
   // eslint-disable-next-line no-console
