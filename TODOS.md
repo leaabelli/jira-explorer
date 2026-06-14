@@ -36,12 +36,6 @@ interaction states first. Pick up before a 1.0 / wider OSS release.
 - **Context:** Eng review D5 chose full re-sync for v1. Only pursue if sync feels slow in practice.
 - **Depends on:** P2 sync engine exists.
 
-### T-RESPONSIVE — Small-screen layout
-- **What:** Below ~1024px, collapse both panels to drawers and give the canvas the full
-  viewport; define a genuine tablet/mobile layout rather than "stacked."
-- **Why:** Desktop-first is fine for v1, but a broken small-screen experience erodes trust
-  for anyone who opens it on a laptop split-screen or tablet.
-- **Pros:** Usable on more devices; better first impression.
-- **Cons:** Graph canvases are awkward on small touch screens; real effort.
-- **Context:** v1 is explicitly desktop-first (`DESIGN.md`). This is the follow-up.
-- **Depends on:** P4 (mindmap) exists.
+### T-RESPONSIVE — Small-screen layout ✅ done
+- Below `lg` (1024px): sidebar and inspector collapse to fixed drawers (hamburger + backdrop +
+  close); the canvas takes the full viewport. Verified at 760px.

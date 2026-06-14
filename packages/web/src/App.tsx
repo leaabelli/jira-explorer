@@ -54,6 +54,7 @@ export function App() {
   const [rootInput, setRootInput] = useState('');
   const [activeRoot, setActiveRoot] = useState<string | null>(null);
   const [settings, setSettings] = useState<{ id: string | null } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const projects = useQuery({ queryKey: ['projects'], queryFn: api.projects.list });
 
@@ -104,11 +105,26 @@ export function App() {
   const noProjects = projects.data && projects.data.length === 0;
 
   return (
-    <div className={`grid h-screen overflow-hidden bg-[#f6f7f9] font-sans text-[#1a1d21] ${showInspector ? 'grid-cols-[280px_1fr_340px]' : 'grid-cols-[280px_1fr]'}`}>
-      <aside className="flex flex-col gap-5 overflow-auto border-r border-[#e4e7eb] bg-white p-4">
-        <div className="flex items-center gap-2">
-          <span className="h-5 w-5 rounded bg-[#0f766e]" />
-          <span className="font-bold tracking-tight">Jira Explorer</span>
+    <div className={`relative h-screen overflow-hidden bg-[#f6f7f9] font-sans text-[#1a1d21] lg:grid ${showInspector ? 'lg:grid-cols-[280px_1fr_340px]' : 'lg:grid-cols-[280px_1fr]'}`}>
+      {/* mobile menu button + backdrop */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Open menu"
+        className="fixed left-3 top-3 z-30 rounded-lg border border-[#e4e7eb] bg-white px-3 py-1.5 text-sm shadow lg:hidden"
+      >
+        ☰
+      </button>
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/30 lg:hidden" />}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[280px] transform flex-col gap-5 overflow-auto border-r border-[#e4e7eb] bg-white p-4 transition-transform lg:static lg:z-auto lg:w-auto lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="h-5 w-5 rounded bg-[#0f766e]" />
+            <span className="font-bold tracking-tight">Jira Explorer</span>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="text-[#8b95a3] lg:hidden" aria-label="Close menu">✕</button>
         </div>
 
         {/* project switcher */}
@@ -189,7 +205,7 @@ export function App() {
         )}
       </aside>
 
-      <main className="relative overflow-hidden">
+      <main className="relative h-full overflow-hidden">
         {noProjects && (
           <div className="flex h-full items-center justify-center text-center">
             <div>

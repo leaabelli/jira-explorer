@@ -123,7 +123,7 @@ function Canvas({ hierarchy }: { hierarchy: Hierarchy }) {
     <Panel position="top-left">
       <button
         onClick={() => setListView((v) => !v)}
-        className="rounded-lg border border-[#e4e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a1d21] shadow-sm"
+        className="ml-11 rounded-lg border border-[#e4e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a1d21] shadow-sm lg:ml-0"
         aria-pressed={listView}
       >
         {listView ? 'Map view' : 'List view (a11y)'}

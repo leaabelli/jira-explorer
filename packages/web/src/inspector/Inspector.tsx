@@ -103,7 +103,7 @@ export function Inspector({ projectId, hierarchy }: { projectId: string; hierarc
   if (!issue) return null;
 
   return (
-    <aside className="flex flex-col gap-4 overflow-auto border-l border-[#e4e7eb] bg-white p-4">
+    <aside className="fixed inset-y-0 right-0 z-50 flex w-[340px] flex-col gap-4 overflow-auto border-l border-[#e4e7eb] bg-white p-4 shadow-2xl lg:static lg:z-auto lg:w-auto lg:shadow-none">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[#0f766e]">{issue.key}</span>
         <button onClick={() => select(null)} className="text-sm text-[#8b95a3] hover:text-[#1a1d21]">✕</button>
