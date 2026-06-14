@@ -40,7 +40,13 @@ npm run dev                 # server (3000) + Vite (5173) with /api proxy
 # open http://localhost:5173
 ```
 
-Useful scripts: `npm test` (Vitest), `npm run typecheck`, `npm run build:web`.
+Or run **everything as one process** (web UI + REST API + MCP on `http://localhost:3000`):
+
+```bash
+npm run serve
+```
+
+Useful scripts: `npm test` (Vitest), `npm run typecheck`, `npm run build:web`, `npm run mcp:stdio`.
 
 ## Connect an LLM (MCP)
 
@@ -51,8 +57,10 @@ write changes back to Jira (behind safety switches). Run it over **stdio** for l
 npm run mcp:stdio
 ```
 
-or use the **HTTP** endpoint at `POST /mcp`. Full setup (Claude Desktop config), every tool with
-example I/O, and the safety model are in **[docs/mcp.md](docs/mcp.md)**.
+or use the **HTTP** endpoint at `POST /mcp` (served by `npm run serve`).
+
+- **Step-by-step setup** for Claude Code, Claude Desktop, and Cursor → **[docs/connect-llm.md](docs/connect-llm.md)**
+- **Every tool** with example I/O + the safety model → **[docs/mcp.md](docs/mcp.md)**
 
 ## Configuration
 
