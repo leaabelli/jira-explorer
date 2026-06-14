@@ -5,18 +5,12 @@
 These were consciously deferred so the focused review could nail the mindmap visual and
 interaction states first. Pick up before a 1.0 / wider OSS release.
 
-### T-A11Y — Keyboard + screen-reader access for the graph
-- **What:** Arrow-key navigation between nodes, Enter to open the inspector, Esc to close,
-  `/` to focus search, a visible focus ring (reuse the selected-epic accent ring), and an
-  accessible **list/tree view fallback** so screen readers can traverse the hierarchy (a
-  pure canvas is invisible to assistive tech).
-- **Why:** A node-graph is the whole product; without this it's unusable for keyboard and
-  screen-reader users, and it blocks any accessibility-conscious OSS adopter.
-- **Pros:** Real inclusivity; also makes power-user navigation faster.
-- **Cons:** Non-trivial — React Flow keyboard handling + a parallel semantic tree view.
-- **Context:** Design system has the visual ring + tokens; the gap is interaction + an AT
-  fallback. See `DESIGN.md` → "Accessibility & responsive".
-- **Depends on:** P4 (mindmap) exists.
+### T-A11Y — Keyboard + screen-reader access for the graph ✅ done
+- Arrow-key navigation between nodes (focusable canvas + visible focus ring), Escape to
+  deselect, and a **role=tree List view** fallback so screen readers can traverse. Pure
+  navigation logic is unit-tested (`mindmap/navigation.ts`).
+- Remaining polish (smaller follow-up): `/` to focus the root input, roving-tabindex inside
+  the tree, and announcing selection changes via an aria-live region.
 
 ### T-PROFILE-EDITOR — Structured visual profile editor
 - **What:** The project settings panel edits the Profile as raw JSON (advanced). Add a structured
