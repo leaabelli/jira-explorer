@@ -14,7 +14,15 @@
 
 import dagre from '@dagrejs/dagre';
 import type { Edge, Node } from '@xyflow/react';
-import type { CoverageProxy, HierarchyNode, Issue, LevelKey } from '@jira-explorer/shared';
+import type {
+  CoverageProxy,
+  GroupMode,
+  HierarchyNode,
+  Issue,
+  LevelKey,
+  Milestone,
+} from '@criterio/shared';
+import { groupEpics } from '@criterio/shared';
 
 // Pure-ish layout: walk the hierarchy honoring the expanded set, size nodes per level, run
 // dagre left->right, and return React Flow nodes + edges. Folded subtrees are excluded.
@@ -81,6 +89,115 @@ export function layoutHierarchy(
     n.position = { x: x - width / 2, y: y - height / 2 };
   }
   return { nodes: rfNodes, edges };
+}
+
+// ── Grouped (macro-block) layout ──────────────────────────────────────────────
+// Pack a requirement's epics into labeled container blocks (by delivery quarter or milestone) so a
+// requirement with many epics reads as a few blocks, not an unbounded vertical list. Manual grid
+// layout (dagre doesn't nest); tasks aren't drawn here — this is an epic-level overview.
+
+export interface GroupNodeData extends Record<string, unknown> {
+  label: string;
+  count: number;
+}
+
+const GROUP = {
+  reqGap: 96, // gap between requirement and the first block column
+  vGap: 32, // vertical gap between blocks
+  pad: 16,
+  headerH: 40,
+  cols: 3,
+  cellW: 220,
+  cellH: 96,
+  cellGapX: 16,
+  cellGapY: 16,
+};
+
+function blockWidth(cols: number): number {
+  return GROUP.pad * 2 + cols * GROUP.cellW + (cols - 1) * GROUP.cellGapX;
+}
+function blockHeight(rows: number): number {
+  return GROUP.headerH + GROUP.pad + rows * GROUP.cellH + (rows - 1) * GROUP.cellGapY + GROUP.pad;
+}
+
+/**
+ * Lay out the requirement + its epics grouped into macro-blocks. Returns React Flow nodes where each
+ * block is a parent container and its epics are children (`parentId` + `extent: 'parent'`), plus an
+ * edge from the requirement to each block. Falls back to a single block when nothing groups.
+ */
+export function layoutGrouped(
+  root: HierarchyNode,
+  mode: GroupMode,
+  milestones: Milestone[],
+): { nodes: Node[]; edges: Edge[] } {
+  const epicNodes = root.children.filter((c) => c.issue.level === 'epic');
+  const byKey = new Map(epicNodes.map((n) => [n.issue.key, n]));
+  const groups = groupEpics(
+    epicNodes.map((n) => n.issue),
+    mode,
+    milestones,
+  );
+
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  // size each block first so we can vertically stack and center the requirement against the total
+  const sized = groups.map((g) => {
+    const cols = Math.min(GROUP.cols, Math.max(1, g.epicKeys.length));
+    const rows = Math.max(1, Math.ceil(g.epicKeys.length / cols));
+    return { g, cols, rows, w: blockWidth(cols), h: blockHeight(rows) };
+  });
+  const totalH = sized.reduce((s, b) => s + b.h, 0) + Math.max(0, sized.length - 1) * GROUP.vGap;
+
+  const reqSize = SIZE.requirement;
+  const blockX = reqSize.w + GROUP.reqGap;
+  nodes.push({
+    id: root.issue.key,
+    type: 'requirement',
+    position: { x: 0, y: Math.max(0, totalH / 2 - reqSize.h / 2) },
+    data: { issue: root.issue, coverage: root.coverage, hasChildren: false, expanded: false },
+  });
+
+  let y = 0;
+  for (const b of sized) {
+    const groupId = `group:${b.g.id}`;
+    nodes.push({
+      id: groupId,
+      type: 'group',
+      position: { x: blockX, y },
+      style: { width: b.w, height: b.h },
+      data: { label: b.g.label, count: b.g.epicKeys.length } satisfies GroupNodeData,
+      selectable: false,
+      draggable: false,
+    });
+    edges.push({
+      id: `${root.issue.key}->${groupId}`,
+      source: root.issue.key,
+      target: groupId,
+      type: 'smoothstep',
+      style: { stroke: '#c7cdd4', strokeWidth: 1.5 },
+    });
+    b.g.epicKeys.forEach((ek, idx) => {
+      const node = byKey.get(ek);
+      if (!node) return;
+      const col = idx % b.cols;
+      const rowIdx = Math.floor(idx / b.cols);
+      nodes.push({
+        id: ek,
+        type: 'epic',
+        parentId: groupId,
+        extent: 'parent',
+        position: {
+          x: GROUP.pad + col * (GROUP.cellW + GROUP.cellGapX),
+          y: GROUP.headerH + GROUP.pad + rowIdx * (GROUP.cellH + GROUP.cellGapY),
+        },
+        data: { issue: node.issue, coverage: node.coverage, hasChildren: false, expanded: false },
+      });
+    });
+    y += b.h + GROUP.vGap;
+  }
+
+  return { nodes, edges };
 }
 
 /** Keys that have children, for initialising the expanded set (default: all open). */

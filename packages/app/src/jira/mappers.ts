@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  */
 
-import type { Issue, Level, ParentLink, StatusCategory } from '@jira-explorer/shared';
-import { initialsOf } from '@jira-explorer/shared';
+import type { Issue, Level, ParentLink, StatusCategory } from '@criterio/shared';
+import { initialsOf } from '@criterio/shared';
 import { parseAcceptanceCriteria } from '../core/acceptance-criteria';
 
 // Map Jira Data Center REST v2 issue shapes -> domain. DC differs from Cloud v3: Epic Link is a
@@ -63,8 +63,17 @@ export function mapIssue(raw: RawIssue, level: Level, opts: MapOptions): Issue {
     milestoneKeys: [],
     url: `${opts.baseUrl.replace(/\/$/, '')}/browse/${raw.key}`,
     updated: f.updated ?? '',
+    // full fidelity: keep every source field so the LLM / inspector can see all of it
+    raw: f,
   };
 }
+
+/**
+ * Request every field from the tracker. We capture all of it (stored as `Issue.raw`) so an LLM has
+ * the full issue context, not just the curated subset. `*all` is a superset of {@link fieldsForLevel}
+ * (parent-link + AC fields are included), so traversal/parsing still works.
+ */
+export const ALL_FIELDS = ['*all'];
 
 /** Extract the parent key a child links to (for building edges from a batched IN-query). */
 export function parentKeyOf(

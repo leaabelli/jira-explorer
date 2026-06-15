@@ -13,7 +13,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import { projectInputSchema } from '@jira-explorer/shared';
+import { projectInputSchema } from '@criterio/shared';
 import type { Workspace } from '../workspace';
 import type { ExplorerService } from '../services';
 import { toApiError } from './errors';
@@ -134,6 +134,24 @@ export function buildRouter(workspace: Workspace): Router {
       if (!s) return;
       await s.updateEpic(req.params.key!, req.body?.patch ?? {}, req.body?.applyToJira);
       return res.json({ ok: true });
+    }),
+  );
+
+  r.get('/projects/:id/pending', (req, res) => {
+    const s = svc(req, res);
+    if (!s) return;
+    const rootKey = typeof req.query.rootKey === 'string' ? req.query.rootKey : undefined;
+    return res.json(s.pendingChanges(rootKey));
+  });
+
+  r.post(
+    '/projects/:id/pending/push',
+    wrap(async (req, res) => {
+      const s = svc(req, res);
+      if (!s) return;
+      const rootKey =
+        typeof req.body?.rootKey === 'string' && req.body.rootKey ? req.body.rootKey : undefined;
+      return res.json(await s.pushAll(rootKey));
     }),
   );
 

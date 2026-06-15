@@ -18,9 +18,10 @@ import type {
   Issue,
   Link,
   Milestone,
+  PendingChange,
   SyncResult,
-} from '@jira-explorer/shared';
-import { initialsOf } from '@jira-explorer/shared';
+} from '@criterio/shared';
+import { initialsOf } from '@criterio/shared';
 import type { DB } from './sqlite';
 
 export interface StoredTree {
@@ -49,6 +50,7 @@ interface IssueRow {
   milestone_keys_json: string;
   url: string;
   updated: string;
+  raw_json: string | null;
 }
 
 function rowToIssue(r: IssueRow): Issue {
@@ -66,6 +68,7 @@ function rowToIssue(r: IssueRow): Issue {
     milestoneKeys: JSON.parse(r.milestone_keys_json),
     url: r.url,
     updated: r.updated,
+    raw: r.raw_json ? JSON.parse(r.raw_json) : undefined,
   };
 }
 
@@ -82,9 +85,9 @@ export class CacheRepo {
     const insIssue = this.db.prepare(
       `INSERT OR REPLACE INTO issues
        (key, root_key, level, summary, status, status_category, assignee_json, delivery_date,
-        description, labels_json, acceptance_criteria_json, milestone_keys_json, url, updated)
+        description, labels_json, acceptance_criteria_json, milestone_keys_json, url, updated, raw_json)
        VALUES (@key,@root_key,@level,@summary,@status,@status_category,@assignee_json,@delivery_date,
-        @description,@labels_json,@acceptance_criteria_json,@milestone_keys_json,@url,@updated)`,
+        @description,@labels_json,@acceptance_criteria_json,@milestone_keys_json,@url,@updated,@raw_json)`,
     );
     const insLink = this.db.prepare(
       `INSERT INTO links (root_key, from_key, to_key, rel) VALUES (?,?,?,?)`,
@@ -113,6 +116,7 @@ export class CacheRepo {
           milestone_keys_json: JSON.stringify(it.milestoneKeys),
           url: it.url,
           updated: it.updated,
+          raw_json: it.raw ? JSON.stringify(it.raw) : null,
         });
       }
       for (const l of tree.links) insLink.run(rootKey, l.from, l.to, l.rel);
@@ -157,6 +161,14 @@ export class CacheRepo {
       | IssueRow
       | undefined;
     return row ? rowToIssue(row) : null;
+  }
+
+  /** The synced root an issue belongs to, or null if it isn't cached. */
+  rootKeyForIssue(key: string): string | null {
+    const row = this.db.prepare('SELECT root_key FROM issues WHERE key = ?').get(key) as
+      | { root_key: string }
+      | undefined;
+    return row?.root_key ?? null;
   }
 
   /** Update cached epic fields after a successful write-back, so the UI reflects the change. */
@@ -228,7 +240,7 @@ export class CacheRepo {
   refreshIssues(rootKey: string, issues: Issue[]): number {
     const upd = this.db.prepare(
       `UPDATE issues SET summary=?, status=?, status_category=?, assignee_json=?, delivery_date=?,
-       description=?, labels_json=?, acceptance_criteria_json=?, updated=? WHERE key=? AND root_key=?`,
+       description=?, labels_json=?, acceptance_criteria_json=?, updated=?, raw_json=? WHERE key=? AND root_key=?`,
     );
     let n = 0;
     const tx = this.db.transaction(() => {
@@ -243,6 +255,7 @@ export class CacheRepo {
           JSON.stringify(it.labels),
           JSON.stringify(it.acceptanceCriteria),
           it.updated,
+          it.raw ? JSON.stringify(it.raw) : null,
           it.key,
           rootKey,
         );
@@ -289,5 +302,58 @@ export class CacheRepo {
     this.db
       .prepare('INSERT OR REPLACE INTO settings (key, value_json) VALUES (?, ?)')
       .run(key, JSON.stringify(value));
+  }
+
+  // ── staged write-back (pending changes) ──────────────────────────────────────
+
+  /** Stage an edit locally. Merges into any existing pending patch for the same issue. */
+  upsertPending(key: string, rootKey: string, patch: EpicPatch, at: string): void {
+    const existing = this.getPending(key)?.patch ?? {};
+    const merged: EpicPatch = { ...existing, ...patch };
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO pending_changes (key, root_key, patch_json, updated_at)
+         VALUES (?,?,?,?)`,
+      )
+      .run(key, rootKey, JSON.stringify(merged), at);
+  }
+
+  getPending(key: string): PendingChange | null {
+    const row = this.db.prepare('SELECT * FROM pending_changes WHERE key = ?').get(key) as
+      | { key: string; root_key: string; patch_json: string; updated_at: string }
+      | undefined;
+    return row
+      ? { key: row.key, rootKey: row.root_key, patch: JSON.parse(row.patch_json), updatedAt: row.updated_at }
+      : null;
+  }
+
+  /** All staged edits, optionally scoped to one root, newest-first. */
+  listPending(rootKey?: string): PendingChange[] {
+    const rows = (
+      rootKey
+        ? this.db
+            .prepare('SELECT * FROM pending_changes WHERE root_key = ? ORDER BY updated_at DESC')
+            .all(rootKey)
+        : this.db.prepare('SELECT * FROM pending_changes ORDER BY updated_at DESC').all()
+    ) as Array<{ key: string; root_key: string; patch_json: string; updated_at: string }>;
+    return rows.map((r) => ({
+      key: r.key,
+      rootKey: r.root_key,
+      patch: JSON.parse(r.patch_json),
+      updatedAt: r.updated_at,
+    }));
+  }
+
+  deletePending(key: string): void {
+    this.db.prepare('DELETE FROM pending_changes WHERE key = ?').run(key);
+  }
+
+  countPending(rootKey?: string): number {
+    const row = (
+      rootKey
+        ? this.db.prepare('SELECT COUNT(*) as n FROM pending_changes WHERE root_key = ?').get(rootKey)
+        : this.db.prepare('SELECT COUNT(*) as n FROM pending_changes').get()
+    ) as { n: number };
+    return row.n;
   }
 }

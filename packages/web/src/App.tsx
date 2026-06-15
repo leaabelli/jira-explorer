@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { PushResult } from '@criterio/shared';
 import { Mindmap } from './mindmap/Mindmap';
 import { Inspector } from './inspector/Inspector';
 import { useMindmap } from './mindmap/store';
@@ -95,6 +96,25 @@ export function App() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['roots', pid] });
       qc.invalidateQueries({ queryKey: ['hierarchy', pid, res.rootKey] });
+    },
+  });
+
+  // staged write-back: edits accumulate as pending changes; "Push" flushes them all to Jira
+  const pending = useQuery({
+    queryKey: ['pending', pid, activeRoot],
+    queryFn: () => api.pending(pid!, activeRoot!),
+    enabled: !!pid && !!activeRoot,
+  });
+  const pendingCount = pending.data?.length ?? 0;
+  const [pushOpen, setPushOpen] = useState(false);
+  const [pushResult, setPushResult] = useState<PushResult | null>(null);
+  const push = useMutation({
+    mutationFn: () => api.pushAll(pid!, activeRoot!),
+    onSuccess: (res) => {
+      setPushResult(res);
+      setPushOpen(false);
+      qc.invalidateQueries({ queryKey: ['pending', pid, activeRoot] });
+      qc.invalidateQueries({ queryKey: ['hierarchy', pid, activeRoot] });
     },
   });
 
@@ -254,6 +274,51 @@ export function App() {
             <Mindmap hierarchy={hierarchy.data} />
           </div>
         )}
+
+        {/* top-right action bar: pull (sync) + push staged edits */}
+        {pid && activeRoot && hierarchy.data && (
+          <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+            <button
+              onClick={() => sync.mutate(activeRoot)}
+              disabled={sync.isPending}
+              title="Full sync: pull the latest tree from Jira"
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-[#e4e7eb] bg-white px-3 text-sm font-semibold text-[#1a1d21] shadow-sm hover:bg-[#f8f9fb] disabled:opacity-50"
+            >
+              {sync.isPending ? 'Syncing…' : '↻ Sync'}
+            </button>
+            <button
+              onClick={() => { setPushResult(null); setPushOpen(true); }}
+              disabled={pendingCount === 0 || push.isPending}
+              title={pendingCount === 0 ? 'No local changes to push' : `Push ${pendingCount} local change(s) to Jira`}
+              className="relative flex h-9 items-center gap-1.5 rounded-lg bg-[#0f766e] px-3 text-sm font-semibold text-white shadow-sm hover:bg-[#0c625b] disabled:opacity-40"
+            >
+              ⤴ Push to Jira
+              {pendingCount > 0 && (
+                <span className="ml-0.5 rounded-full bg-white/25 px-1.5 text-xs font-bold">{pendingCount}</span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* push result banner */}
+        {pushResult && (
+          <div className="absolute right-3 top-14 z-20 w-80 rounded-lg border border-[#e4e7eb] bg-white p-3 text-sm shadow-lg">
+            <div className="flex items-start justify-between">
+              <span className="font-semibold text-[#15803d]">Pushed {pushResult.pushed.length} change(s)</span>
+              <button onClick={() => setPushResult(null)} className="text-[#8b95a3] hover:text-[#1a1d21]">✕</button>
+            </div>
+            {pushResult.failed.length > 0 && (
+              <div className="mt-1 text-[#dc2626]">
+                {pushResult.failed.length} failed:
+                <ul className="mt-1 list-disc pl-4">
+                  {pushResult.failed.map((f) => (
+                    <li key={f.key}><span className="font-mono text-xs">{f.key}</span> — {f.error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {showInspector && pid && <Inspector projectId={pid} hierarchy={hierarchy.data!} />}
@@ -267,6 +332,32 @@ export function App() {
             setSettings(null);
           }}
         />
+      )}
+
+      {pushOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setPushOpen(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold tracking-tight">Push {pendingCount} change{pendingCount === 1 ? '' : 's'} to Jira?</h2>
+            <div className="mt-3 rounded-lg border border-[#f3d9a8] bg-[#fdf6e9] p-3 text-[13px] text-[#8a5a16]">
+              <b>⚠ Write-back is experimental and may be incomplete.</b> This will modify {pendingCount} issue{pendingCount === 1 ? '' : 's'} directly in Jira. Changes can't be undone from here — only fields shown in the editor are written.
+            </div>
+            <ul className="mt-3 max-h-40 overflow-auto rounded border border-[#eceef1] p-2 text-sm">
+              {(pending.data ?? []).map((c) => (
+                <li key={c.key} className="flex items-baseline gap-2 py-0.5">
+                  <span className="font-mono text-xs text-[#0f766e]">{c.key}</span>
+                  <span className="truncate text-[#5b6573]">{c.patch.summary ?? Object.keys(c.patch).join(', ')}</span>
+                </li>
+              ))}
+            </ul>
+            {push.isError && <p className="mt-2 text-xs text-[#dc2626]">{(push.error as Error).message}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setPushOpen(false)} className="h-9 rounded-lg border border-[#d3d8de] px-3 text-sm font-semibold text-[#1a1d21] hover:bg-[#f8f9fb]">Cancel</button>
+              <button onClick={() => push.mutate()} disabled={push.isPending} className="h-9 rounded-lg bg-[#0f766e] px-4 text-sm font-semibold text-white hover:bg-[#0c625b] disabled:opacity-50">
+                {push.isPending ? 'Pushing…' : `Push ${pendingCount} to Jira`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

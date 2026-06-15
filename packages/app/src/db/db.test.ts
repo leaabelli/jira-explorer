@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createDb, type DB } from './sqlite';
 import { CacheRepo, type StoredTree } from './repositories';
-import type { Issue } from '@jira-explorer/shared';
+import type { Issue } from '@criterio/shared';
 
 const issue = (key: string, over: Partial<Issue> = {}): Issue => ({
   key,
@@ -92,6 +92,41 @@ describe('CacheRepo', () => {
     expect(hist).toHaveLength(2);
     expect(hist[0]!.linkedEpicCount).toBe(3); // newest first
     expect(hist[1]!.linkedEpicCount).toBe(4);
+  });
+
+  it('round-trips the full raw field object (full-fidelity capture)', () => {
+    const withRaw: StoredTree = {
+      issues: [
+        issue('R1', { level: 'requirement' }),
+        issue('E1', { raw: { customfield_10020: 13, sprint: ['S1', 'S2'], nested: { a: 1 } } }),
+      ],
+      links: [],
+      milestones: [],
+    };
+    repo.replaceTree('R1', withRaw, 't1');
+    expect(repo.getIssue('E1')?.raw).toEqual({
+      customfield_10020: 13,
+      sprint: ['S1', 'S2'],
+      nested: { a: 1 },
+    });
+    // refreshIssues also persists updated raw
+    repo.refreshIssues('R1', [issue('E1', { raw: { customfield_10020: 21 } })]);
+    expect(repo.getIssue('E1')?.raw).toEqual({ customfield_10020: 21 });
+  });
+
+  it('staged pending changes: upsert merges, list/count scope by root, delete clears', () => {
+    repo.upsertPending('E1', 'R1', { summary: 'new title' }, 't1');
+    repo.upsertPending('E1', 'R1', { deliveryDate: '2026-09-01' }, 't2'); // merges
+    repo.upsertPending('E9', 'R2', { labels: ['x'] }, 't3');
+
+    expect(repo.getPending('E1')?.patch).toEqual({ summary: 'new title', deliveryDate: '2026-09-01' });
+    expect(repo.countPending()).toBe(2);
+    expect(repo.countPending('R1')).toBe(1);
+    expect(repo.listPending('R1').map((p) => p.key)).toEqual(['E1']);
+
+    repo.deletePending('E1');
+    expect(repo.getPending('E1')).toBeNull();
+    expect(repo.countPending()).toBe(1);
   });
 
   it('refreshIssues updates existing rows only (incremental) and reports lastSyncedAt', () => {

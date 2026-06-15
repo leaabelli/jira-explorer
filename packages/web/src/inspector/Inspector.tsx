@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { EpicPatch, Hierarchy, Issue } from '@jira-explorer/shared';
+import type { EpicPatch, Hierarchy, Issue } from '@criterio/shared';
 import { api } from '../api';
 import { useMindmap } from '../mindmap/store';
 
@@ -45,6 +45,7 @@ function EpicEditor({ projectId, issue }: { projectId: string; issue: Issue }) {
     setLabels(issue.labels.join(', '));
   }, [issue]);
 
+  // Staged: save locally, mark pending. The "Push to Jira" button in the top bar flushes all edits.
   const save = useMutation({
     mutationFn: () => {
       const patch: EpicPatch = {
@@ -53,9 +54,12 @@ function EpicEditor({ projectId, issue }: { projectId: string; issue: Issue }) {
         deliveryDate: deliveryDate || undefined,
         labels: labels.split(',').map((s) => s.trim()).filter(Boolean),
       };
-      return api.updateEpic(projectId, issue.key, patch, true);
+      return api.updateEpic(projectId, issue.key, patch, false);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['hierarchy', projectId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hierarchy', projectId] });
+      qc.invalidateQueries({ queryKey: ['pending', projectId] });
+    },
   });
 
   const fld = 'h-8 w-full rounded border border-[#d3d8de] px-2 text-sm outline-none focus:border-[#0f766e]';
@@ -68,11 +72,35 @@ function EpicEditor({ projectId, issue }: { projectId: string; issue: Issue }) {
       </Field>
       <Field label="Labels (comma separated)"><input className={fld} value={labels} onChange={(e) => setLabels(e.target.value)} /></Field>
       <button disabled={save.isPending} onClick={() => save.mutate()} className="h-8 rounded bg-[#0f766e] text-sm font-semibold text-white disabled:opacity-50">
-        {save.isPending ? 'Saving…' : 'Save to Jira'}
+        {save.isPending ? 'Saving…' : 'Save change'}
       </button>
       {save.isError && <p className="text-xs text-[#dc2626]">{(save.error as Error).message}</p>}
-      {save.isSuccess && <p className="text-xs text-[#15803d]">Saved.</p>}
+      {save.isSuccess && <p className="text-xs text-[#15803d]">Saved locally — staged for Jira. Use “Push” in the top bar to send it.</p>}
     </div>
+  );
+}
+
+/** Collapsed dump of every untouched tracker field (full fidelity), for power users + parity with the LLM export. */
+function AllFields({ issue }: { issue: Issue }) {
+  const raw = issue.raw;
+  if (!raw || Object.keys(raw).length === 0) return null;
+  const entries = Object.entries(raw).filter(([, v]) => v !== null && v !== undefined && v !== '');
+  return (
+    <details className="border-t border-[#eceef1] pt-3">
+      <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wider text-[#8b95a3]">
+        All fields ({entries.length})
+      </summary>
+      <dl className="mt-2 flex flex-col gap-1.5">
+        {entries.map(([k, v]) => (
+          <div key={k} className="grid grid-cols-[100px_1fr] gap-2">
+            <dt className="truncate font-mono text-[10px] text-[#8b95a3]" title={k}>{k}</dt>
+            <dd className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-[#5b6573]">
+              {typeof v === 'string' ? v : JSON.stringify(v, null, 2)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
 
@@ -133,6 +161,8 @@ export function Inspector({ projectId, hierarchy }: { projectId: string; hierarc
       {issue.level === 'task' && issue.description && (
         <Field label="Description"><p className="whitespace-pre-wrap text-sm text-[#5b6573]">{issue.description}</p></Field>
       )}
+
+      <AllFields issue={issue} />
     </aside>
   );
 }

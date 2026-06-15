@@ -20,12 +20,12 @@ import type {
   Milestone,
   Profile,
   Scope,
-} from '@jira-explorer/shared';
-import { levelByKey } from '@jira-explorer/shared';
+} from '@criterio/shared';
+import { levelByKey } from '@criterio/shared';
 import type { TrackerAdapter } from '../core/adapter';
 import { JiraClient, JiraError, type FetchFn } from './client';
 import { childChunks, chunk, identityClause, scopeClause } from './jql';
-import { fieldsForLevel, mapIssue, parentKeyOf, type MapOptions, type RawIssue } from './mappers';
+import { ALL_FIELDS, mapIssue, parentKeyOf, type MapOptions, type RawIssue } from './mappers';
 
 export interface JiraAdapterOptions {
   baseUrl: string;
@@ -68,7 +68,7 @@ export class JiraAdapter implements TrackerAdapter {
     const level = levelByKey(profile, 'requirement');
     if (!level) return null;
     try {
-      const raw = await this.client.getIssue(rootKey, fieldsForLevel(level, this.mapOpts));
+      const raw = await this.client.getIssue(rootKey, ALL_FIELDS);
       return mapIssue(raw, level, this.mapOpts);
     } catch (e) {
       if (e instanceof JiraError && e.code === 'not_found') return null;
@@ -84,7 +84,7 @@ export class JiraAdapter implements TrackerAdapter {
   ): Promise<{ issues: Issue[]; links: Link[] }> {
     const level = levelByKey(profile, levelKey);
     if (!level?.parentLink || parentKeys.length === 0) return { issues: [], links: [] };
-    const fields = fieldsForLevel(level, this.mapOpts);
+    const fields = ALL_FIELDS;
     const rel: Link['rel'] = levelKey === 'epic' ? 'requirement-epic' : 'epic-task';
 
     const issues: Issue[] = [];
@@ -138,7 +138,7 @@ export class JiraAdapter implements TrackerAdapter {
   ): Promise<Issue[]> {
     const level = levelByKey(profile, levelKey);
     if (!level || keys.length === 0) return [];
-    const fields = fieldsForLevel(level, this.mapOpts);
+    const fields = ALL_FIELDS;
     const sinceJql = formatJiraDate(since);
     const out: Issue[] = [];
     for (const ks of chunk(keys, 50)) {

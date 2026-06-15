@@ -83,6 +83,20 @@ const MIGRATIONS: string[] = [
     value_json TEXT NOT NULL
   );
   `,
+  // v2 — full-fidelity raw field capture + staged (pending) write-back
+  `
+  -- the untouched tracker 'fields' object per issue, so the LLM/inspector see everything
+  ALTER TABLE issues ADD COLUMN raw_json TEXT;
+
+  -- edits saved locally but not yet pushed to Jira; one merged patch per issue, survives reload
+  CREATE TABLE pending_changes (
+    key TEXT PRIMARY KEY,
+    root_key TEXT NOT NULL,
+    patch_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX idx_pending_root ON pending_changes(root_key);
+  `,
 ];
 
 export function runMigrations(db: BetterSqlite3.Database): void {

@@ -17,9 +17,11 @@ import type {
   EpicPatch,
   Hierarchy,
   Issue,
+  PendingChange,
   Project,
+  PushResult,
   SyncResult,
-} from '@jira-explorer/shared';
+} from '@criterio/shared';
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -63,6 +65,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ patch, applyToJira }),
     }),
+  pending: (id: string, rootKey?: string) =>
+    req<PendingChange[]>(`${p(id)}/pending${rootKey ? `?rootKey=${encodeURIComponent(rootKey)}` : ''}`),
+  pushAll: (id: string, rootKey?: string) =>
+    req<PushResult>(`${p(id)}/pending/push`, { method: 'POST', body: JSON.stringify({ rootKey }) }),
   coverageSummary: (id: string, key: string) =>
     fetch(`/api${p(id)}/coverage/${encodeURIComponent(key)}/summary`).then((r) => r.text()),
   exportUrl: (id: string, rootKey: string, format: 'md' | 'json') =>

@@ -17,11 +17,13 @@ import type {
   EpicPatch,
   Hierarchy,
   Issue,
+  PendingChange,
   Profile,
   Project,
+  PushResult,
   Scope,
   SyncResult,
-} from '@jira-explorer/shared';
+} from '@criterio/shared';
 import type { AppConfig } from './config';
 import type { TrackerAdapter } from './core/adapter';
 import { CacheRepo, type CoverageSnapshot } from './db/repositories';
@@ -71,13 +73,49 @@ export class ExplorerService {
       : syncRoot(rootKey, this.project.profile, this.project.scope, deps);
   }
 
+  /**
+   * Apply an epic edit. When `applyToJira` is true it writes straight through to Jira; otherwise the
+   * edit is staged: the local cache is updated AND the change is recorded as pending so it can be
+   * reviewed and flushed later via {@link pushAll}. The UI uses the staged path by default.
+   */
   async updateEpic(
     key: string,
     patch: EpicPatch,
     applyToJira = this.config.mcp.applyToJira,
   ): Promise<void> {
-    if (applyToJira) await this.adapter.updateEpic(key, patch);
+    if (applyToJira) {
+      await this.adapter.updateEpic(key, patch);
+      this.repo.applyEpicPatch(key, patch);
+      this.repo.deletePending(key); // now in Jira, no longer pending
+      return;
+    }
     this.repo.applyEpicPatch(key, patch);
+    const rootKey = this.repo.rootKeyForIssue(key) ?? '';
+    this.repo.upsertPending(key, rootKey, patch, new Date().toISOString());
+  }
+
+  /** Staged edits not yet pushed to Jira, optionally scoped to one root. */
+  pendingChanges(rootKey?: string): PendingChange[] {
+    return this.repo.listPending(rootKey);
+  }
+
+  /**
+   * Flush staged edits to Jira. Pushes each pending change; on success clears it. Never aborts the
+   * whole batch for one failure — failures are returned per-key so the UI can report them.
+   */
+  async pushAll(rootKey?: string): Promise<PushResult> {
+    const pending = this.repo.listPending(rootKey);
+    const result: PushResult = { pushed: [], failed: [] };
+    for (const p of pending) {
+      try {
+        await this.adapter.updateEpic(p.key, p.patch);
+        this.repo.deletePending(p.key);
+        result.pushed.push(p.key);
+      } catch (e) {
+        result.failed.push({ key: p.key, error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    return result;
   }
 
   transitionIssue(key: string, transitionName: string): Promise<void> {

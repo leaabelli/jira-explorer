@@ -23,11 +23,36 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { Hierarchy, HierarchyNode } from '@jira-explorer/shared';
-import { allExpandableKeys, layoutHierarchy } from './layout';
+import type { GroupMode, Hierarchy, HierarchyNode } from '@criterio/shared';
+import { allExpandableKeys, layoutGrouped, layoutHierarchy } from './layout';
 import { nodeTypes } from './nodes';
 import { useMindmap } from './store';
 import { dirForKey, navigate } from './navigation';
+
+const GROUP_OPTIONS: Array<{ value: GroupMode; label: string }> = [
+  { value: 'none', label: 'Tree' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'milestone', label: 'Milestone' },
+];
+
+function GroupControl() {
+  const groupMode = useMindmap((s) => s.groupMode);
+  const setGroupMode = useMindmap((s) => s.setGroupMode);
+  return (
+    <div className="inline-flex overflow-hidden rounded-lg border border-[#e4e7eb] bg-white shadow-sm" role="group" aria-label="Group epics by">
+      {GROUP_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => setGroupMode(o.value)}
+          aria-pressed={groupMode === o.value}
+          className={`px-2.5 py-1.5 text-xs font-semibold ${groupMode === o.value ? 'bg-[#0f766e] text-white' : 'text-[#5b6573] hover:bg-[#f1f3f5]'}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Legend({ milestones }: { milestones: Hierarchy['milestones'] }) {
   return (
@@ -95,6 +120,7 @@ function Canvas({ hierarchy }: { hierarchy: Hierarchy }) {
   const select = useMindmap((s) => s.select);
   const selected = useMindmap((s) => s.selected);
   const rootKey = hierarchy.root.issue.key;
+  const groupMode = useMindmap((s) => s.groupMode);
   const [listView, setListView] = useState(false);
   const rf = useReactFlow();
 
@@ -103,8 +129,11 @@ function Canvas({ hierarchy }: { hierarchy: Hierarchy }) {
   }, [rootKey, setExpanded, hierarchy.root]);
 
   const { nodes, edges } = useMemo(
-    () => layoutHierarchy(hierarchy.root, expanded),
-    [hierarchy, expanded],
+    () =>
+      groupMode === 'none'
+        ? layoutHierarchy(hierarchy.root, expanded)
+        : layoutGrouped(hierarchy.root, groupMode, hierarchy.milestones),
+    [hierarchy, expanded, groupMode],
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -121,13 +150,21 @@ function Canvas({ hierarchy }: { hierarchy: Hierarchy }) {
 
   const Toggle = (
     <Panel position="top-left">
-      <button
-        onClick={() => setListView((v) => !v)}
-        className="ml-11 rounded-lg border border-[#e4e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a1d21] shadow-sm lg:ml-0"
-        aria-pressed={listView}
-      >
-        {listView ? 'Map view' : 'List view (a11y)'}
-      </button>
+      <div className="ml-11 flex items-center gap-2 lg:ml-0">
+        <button
+          onClick={() => setListView((v) => !v)}
+          className="rounded-lg border border-[#e4e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a1d21] shadow-sm"
+          aria-pressed={listView}
+        >
+          {listView ? 'Map view' : 'List view (a11y)'}
+        </button>
+        <GroupControl />
+        {groupMode !== 'none' && (
+          <span className="rounded-md bg-[#fdf3e3] px-2 py-1 text-[11px] font-medium text-[#b45309]">
+            Epic overview · tasks hidden
+          </span>
+        )}
+      </div>
     </Panel>
   );
 

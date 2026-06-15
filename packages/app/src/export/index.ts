@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Hierarchy, HierarchyNode, Issue } from '@jira-explorer/shared';
+import type { Hierarchy, HierarchyNode, Issue } from '@criterio/shared';
 
 // Export the requirement tree for an LLM (req #6) and for humans. The markdown "context pack" is
 // laid out so an LLM can check whether the epics cover each acceptance criterion and cite the
@@ -24,6 +24,24 @@ function epicsOf(root: HierarchyNode): HierarchyNode[] {
 
 function esc(s: string): string {
   return s.replace(/\r/g, '');
+}
+
+/**
+ * Collapsed "all fields" block for the LLM: the full untouched tracker fields, in a <details> so the
+ * curated pack stays readable while every detail remains available. Empty when raw wasn't captured.
+ */
+function allFields(issue: Issue): string[] {
+  if (!issue.raw || Object.keys(issue.raw).length === 0) return [];
+  return [
+    '',
+    `<details><summary>All fields — ${issue.key}</summary>`,
+    '',
+    '```json',
+    JSON.stringify(issue.raw, null, 2),
+    '```',
+    '',
+    '</details>',
+  ];
 }
 
 /** LLM context pack. */
@@ -44,6 +62,7 @@ export function toContextMarkdown(h: Hierarchy): string {
   if (r.description) {
     lines.push('', '## Description', '', esc(r.description));
   }
+  lines.push(...allFields(r));
 
   lines.push('', '## Acceptance Criteria', '');
   if (r.acceptanceCriteria.length === 0) {
@@ -69,6 +88,7 @@ export function toContextMarkdown(h: Hierarchy): string {
       lines.push('', 'Tasks:');
       for (const t of tasks) lines.push(`- ${t.issue.key} ${t.issue.summary} (${t.issue.status})`);
     }
+    lines.push(...allFields(i));
     lines.push('');
   }
 
@@ -103,6 +123,8 @@ export function toJsonExport(h: Hierarchy): unknown {
     milestoneKeys: n.issue.milestoneKeys,
     acceptanceCriteria: n.issue.acceptanceCriteria,
     coverage: n.coverage,
+    // full-fidelity: every untouched tracker field for this issue
+    raw: n.issue.raw,
     children: n.children.map(node),
   });
   return { requirement: node(h.root), milestones: h.milestones };

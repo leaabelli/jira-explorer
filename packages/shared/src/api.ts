@@ -50,3 +50,18 @@ export interface EpicPatch {
   assigneeName?: string;
   labels?: string[];
 }
+
+/** An edit saved locally but not yet pushed to Jira (staged write-back). */
+export interface PendingChange {
+  key: string;
+  rootKey: string;
+  patch: EpicPatch;
+  /** ISO timestamp of the last local edit */
+  updatedAt: string;
+}
+
+/** Outcome of flushing pending changes to Jira. The batch never aborts on a single failure. */
+export interface PushResult {
+  pushed: string[];
+  failed: Array<{ key: string; error: string }>;
+}

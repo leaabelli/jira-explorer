@@ -13,9 +13,9 @@
  */
 
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { deliveryBand, type DeliveryBand } from '@jira-explorer/shared';
+import { deliveryBand, type DeliveryBand } from '@criterio/shared';
 import { useMindmap } from './store';
-import type { NodeData } from './layout';
+import type { GroupNodeData, NodeData } from './layout';
 
 // Custom React Flow nodes, built to DESIGN.md: hierarchy by size + weight, one teal accent,
 // delivery badges, milestone tags, coverage on requirements. Folded toggle on nodes w/ children.
@@ -160,4 +160,25 @@ export function TaskNode({ data }: NodeProps) {
   );
 }
 
-export const nodeTypes = { requirement: RequirementNode, epic: EpicNode, task: TaskNode };
+/** Macro-block container (grouped view): a labeled card that visually holds its epic children. */
+export function GroupNode({ data }: NodeProps) {
+  const { label, count } = data as GroupNodeData;
+  return (
+    <div className="relative h-full w-full rounded-2xl border border-[#dfe3e8] bg-[#fbfcfd]/80 shadow-[0_1px_2px_rgba(16,24,40,.04)]">
+      <Handle type="target" position={Position.Left} className="!border-0 !bg-transparent" />
+      <div className="flex items-center justify-between gap-2 px-4 pt-3">
+        <span className="truncate text-[13px] font-bold tracking-tight text-[#1a1d21]">{label}</span>
+        <span className="flex-none rounded-full bg-[#e7ebef] px-2 py-0.5 text-[11px] font-semibold text-[#5b6573]">
+          {count} {count === 1 ? 'epic' : 'epics'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export const nodeTypes = {
+  requirement: RequirementNode,
+  epic: EpicNode,
+  task: TaskNode,
+  group: GroupNode,
+};

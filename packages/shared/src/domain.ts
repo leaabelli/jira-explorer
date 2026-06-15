@@ -53,6 +53,12 @@ export interface Issue {
   url: string;
   /** ISO timestamp of last update in the tracker */
   updated: string;
+  /**
+   * The full, untouched source `fields` object from the tracker (Jira `fields`). Kept verbatim so
+   * an LLM (and the inspector's "All fields" view) sees every detail, not just the curated subset
+   * above. Optional: absent on issues synced before this was captured.
+   */
+  raw?: Record<string, unknown>;
 }
 
 /** A milestone groups epics across requirements; rendered as an overlay, not a tree node. */
@@ -124,4 +130,82 @@ export function initialsOf(displayName: string): string {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
+
+// ── Epic grouping (macro-block view) ───────────────────────────────────────────
+// Pure, testable bucketing so a requirement with many epics reads as a few labeled blocks
+// (by delivery quarter or by milestone) instead of one unbounded vertical list.
+
+export type GroupMode = 'none' | 'quarter' | 'milestone';
+
+/** An ordered bucket of epics for the grouped canvas view. */
+export interface EpicGroup {
+  /** stable bucket id (quarter id, milestone key, or sentinel) */
+  id: string;
+  label: string;
+  epicKeys: string[];
+}
+
+const NO_DATE = 'No delivery date';
+const NO_MILESTONE = 'No milestone';
+
+/** Calendar quarter label for an ISO date, e.g. '2026-Q2'; missing/invalid → "No delivery date". */
+export function quarterOf(isoDate?: string): string {
+  if (!isoDate) return NO_DATE;
+  const ms = Date.parse(isoDate.length <= 10 ? isoDate + 'T00:00:00Z' : isoDate);
+  if (Number.isNaN(ms)) return NO_DATE;
+  const d = new Date(ms);
+  const q = Math.floor(d.getUTCMonth() / 3) + 1;
+  return `${d.getUTCFullYear()}-Q${q}`;
+}
+
+/**
+ * Bucket epics for the grouped view. By quarter (chronological, "No delivery date" last) or by
+ * milestone membership (epics in multiple milestones appear in each; orphans go to "No milestone"
+ * last, milestones ordered by dueDate). Pure: caller supplies the milestone overlay for labels.
+ */
+export function groupEpics(epics: Issue[], mode: GroupMode, milestones: Milestone[]): EpicGroup[] {
+  if (mode === 'quarter') {
+    const byQ = new Map<string, string[]>();
+    for (const e of epics) {
+      const q = quarterOf(e.deliveryDate);
+      (byQ.get(q) ?? byQ.set(q, []).get(q)!).push(e.key);
+    }
+    return [...byQ.entries()]
+      .map(([id, epicKeys]) => ({ id, label: id === NO_DATE ? id : id, epicKeys }))
+      .sort((a, b) => rankQuarter(a.id) - rankQuarter(b.id) || a.id.localeCompare(b.id));
+  }
+
+  if (mode === 'milestone') {
+    const msByKey = new Map(milestones.map((m) => [m.key, m]));
+    const buckets = new Map<string, string[]>();
+    for (const e of epics) {
+      const keys = e.milestoneKeys.length ? e.milestoneKeys : [NO_MILESTONE];
+      for (const mk of keys) (buckets.get(mk) ?? buckets.set(mk, []).get(mk)!).push(e.key);
+    }
+    return [...buckets.entries()]
+      .map(([id, epicKeys]) => ({
+        id,
+        label: id === NO_MILESTONE ? id : (msByKey.get(id)?.name ?? id),
+        epicKeys,
+      }))
+      .sort((a, b) => rankMilestone(a.id, msByKey) - rankMilestone(b.id, msByKey) || a.label.localeCompare(b.label));
+  }
+
+  return [{ id: 'all', label: 'All epics', epicKeys: epics.map((e) => e.key) }];
+}
+
+/** Quarters sort chronologically; the "no date" bucket always last. */
+function rankQuarter(id: string): number {
+  if (id === NO_DATE) return Number.POSITIVE_INFINITY;
+  const m = /^(\d{4})-Q([1-4])$/.exec(id);
+  return m ? Number(m[1]) * 4 + Number(m[2]) : Number.POSITIVE_INFINITY - 1;
+}
+
+/** Milestones sort by due date; undated milestones then the "no milestone" bucket last. */
+function rankMilestone(id: string, msByKey: Map<string, Milestone>): number {
+  if (id === NO_MILESTONE) return Number.POSITIVE_INFINITY;
+  const due = msByKey.get(id)?.dueDate;
+  const t = due ? Date.parse(due) : NaN;
+  return Number.isNaN(t) ? Number.POSITIVE_INFINITY - 1 : t;
 }
