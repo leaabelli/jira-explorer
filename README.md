@@ -1,4 +1,4 @@
-# Jira Explorer
+# Criterio
 
 Pull **your slice** of a Jira project into a navigable mindmap, edit the epics you own, and let an
 LLM verify — with citations — that your epics actually cover each requirement's acceptance criteria.
@@ -98,7 +98,8 @@ Design system: [DESIGN.md](DESIGN.md) · Architecture/vision: [docs/designs/jira
 ## Status
 
 v1 in progress. Tracker-agnostic by design (a Linear/Cloud/GitHub adapter is one `TrackerAdapter`
-away). Deferred: keyboard/screen-reader graph access, responsive layout, incremental sync.
+away). Keyboard/screen-reader access, a responsive small-screen layout, and incremental refresh are
+in. Next: a second adapter (Jira Cloud), and the AI-verified per-criterion coverage surface.
 
 ## License
 

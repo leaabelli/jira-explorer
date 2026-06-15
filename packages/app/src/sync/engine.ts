@@ -100,3 +100,54 @@ export async function syncRoot(
   repo.recordSyncRun(result);
   return result;
 }
+
+/**
+ * Incremental refresh (T-INCREMENTAL-SYNC): re-fetch only the cached issues that changed since the
+ * last sync and UPDATE their fields in place. Cheap (one query per level, only changed issues), and
+ * correct for what it claims. It does NOT discover new / deleted / moved issues — for that, run a
+ * full {@link syncRoot}. Requires a prior full sync of the root.
+ */
+export async function syncRootIncremental(
+  rootKey: string,
+  profile: Profile,
+  scope: Scope,
+  deps: SyncDeps,
+): Promise<SyncResult> {
+  const { adapter, repo } = deps;
+  const now = deps.now ?? (() => new Date().toISOString());
+
+  const tree = repo.getTree(rootKey);
+  if (!tree) throw new RootNotFoundError(rootKey); // never fully synced
+
+  const since = repo.lastSyncedAt(rootKey) ?? '1970-01-01T00:00:00Z';
+  const byLevel: Record<'requirement' | 'epic' | 'task', string[]> = { requirement: [], epic: [], task: [] };
+  for (const i of tree.issues) byLevel[i.level].push(i.key);
+
+  const changed = [];
+  for (const lvl of ['requirement', 'epic', 'task'] as const) {
+    if (byLevel[lvl].length) changed.push(...(await adapter.fetchUpdated(lvl, byLevel[lvl], since, profile, scope)));
+  }
+  repo.refreshIssues(rootKey, changed);
+
+  const fresh = repo.getTree(rootKey)!;
+  const req = fresh.issues.find((i) => i.level === 'requirement');
+  const linkedEpicKeys = new Set(
+    fresh.links.filter((l) => l.from === rootKey && l.rel === 'requirement-epic').map((l) => l.to),
+  );
+  const linkedEpics = fresh.issues.filter((i) => i.level === 'epic' && linkedEpicKeys.has(i.key));
+
+  const syncedAt = now();
+  if (req) repo.recordCoverage(rootKey, req.key, computeCoverageProxy(req, linkedEpics), syncedAt);
+
+  const result: SyncResult = {
+    rootKey,
+    issueCount: fresh.issues.length,
+    epicCount: fresh.issues.filter((i) => i.level === 'epic').length,
+    taskCount: fresh.issues.filter((i) => i.level === 'task').length,
+    milestoneCount: fresh.milestones.length,
+    failedKeys: [],
+    syncedAt,
+  };
+  repo.recordSyncRun(result);
+  return result;
+}

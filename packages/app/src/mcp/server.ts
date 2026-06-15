@@ -153,17 +153,21 @@ export function buildMcpServer(workspace: Workspace, config: AppConfig): McpServ
   server.registerTool(
     'sync',
     {
-      description: 'Fetch a requirement and its whole tree from Jira into a project cache, replacing the prior sync. Required before reads if never synced.',
-      inputSchema: { rootKey: z.string().describe('The requirement issue key to sync.'), projectId },
+      description: 'Fetch a requirement and its whole tree from Jira into a project cache, replacing the prior sync. Required before reads if never synced. Pass incremental=true to only refresh changed issues’ fields (faster; does NOT pick up new/deleted/moved issues).',
+      inputSchema: {
+        rootKey: z.string().describe('The requirement issue key to sync.'),
+        incremental: z.boolean().optional().describe('If true, only refresh changed issues’ fields (requires a prior full sync).'),
+        projectId,
+      },
       annotations: { readOnlyHint: false, title: 'Sync from Jira' },
     },
-    async ({ rootKey, projectId: pid }) => {
+    async ({ rootKey, incremental, projectId: pid }) => {
       const blocked = denied();
       if (blocked) return blocked;
       const s = resolve(pid);
       if ('error' in s) return err(s.error);
       try {
-        const result = await s.sync(rootKey);
+        const result = await s.sync(rootKey, { incremental });
         workspace.store.setLastSynced(s.project.id, result.syncedAt);
         return ok(json(result));
       } catch (e) {

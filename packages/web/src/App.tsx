@@ -89,6 +89,15 @@ export function App() {
     },
   });
 
+  // incremental refresh of the currently-open tree (changed fields only)
+  const refresh = useMutation({
+    mutationFn: () => api.sync(pid!, activeRoot!, true),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['roots', pid] });
+      qc.invalidateQueries({ queryKey: ['hierarchy', pid, res.rootKey] });
+    },
+  });
+
   // reset view when switching project
   useEffect(() => {
     setActiveRoot(null);
@@ -122,7 +131,7 @@ export function App() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="h-5 w-5 rounded bg-[#0f766e]" />
-            <span className="font-bold tracking-tight">Jira Explorer</span>
+            <span className="font-bold tracking-tight">Criterio</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="text-[#8b95a3] lg:hidden" aria-label="Close menu">✕</button>
         </div>
@@ -181,6 +190,17 @@ export function App() {
                 {sync.isPending ? 'Syncing…' : 'Sync this tree'}
               </button>
               {sync.isError && <p className="mt-2 text-xs text-[#dc2626]">{(sync.error as Error).message}</p>}
+              {activeRoot && (
+                <button
+                  disabled={refresh.isPending}
+                  onClick={() => refresh.mutate()}
+                  title="Re-fetch only changed issues (fast). A full sync also picks up new/removed/moved issues."
+                  className="mt-2 h-7 w-full rounded border border-[#d3d8de] bg-white text-xs font-semibold text-[#1a1d21] disabled:opacity-50"
+                >
+                  {refresh.isPending ? 'Refreshing…' : '↻ Refresh changed (fast)'}
+                </button>
+              )}
+              {refresh.isError && <p className="mt-1 text-xs text-[#dc2626]">{(refresh.error as Error).message}</p>}
             </div>
 
             {roots.data && roots.data.length > 0 && (

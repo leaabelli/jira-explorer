@@ -56,8 +56,8 @@ export const api = {
   hierarchy: (id: string, rootKey: string) =>
     req<Hierarchy>(`${p(id)}/hierarchy/${encodeURIComponent(rootKey)}`),
   issue: (id: string, key: string) => req<Issue>(`${p(id)}/issue/${encodeURIComponent(key)}`),
-  sync: (id: string, rootKey: string) =>
-    req<SyncResult>(`${p(id)}/sync`, { method: 'POST', body: JSON.stringify({ rootKey }) }),
+  sync: (id: string, rootKey: string, incremental?: boolean) =>
+    req<SyncResult>(`${p(id)}/sync`, { method: 'POST', body: JSON.stringify({ rootKey, incremental }) }),
   updateEpic: (id: string, key: string, patch: EpicPatch, applyToJira?: boolean) =>
     req<{ ok: true }>(`${p(id)}/epic/${encodeURIComponent(key)}`, {
       method: 'PUT',

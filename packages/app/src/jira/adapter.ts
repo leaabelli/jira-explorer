@@ -24,7 +24,7 @@ import type {
 import { levelByKey } from '@jira-explorer/shared';
 import type { TrackerAdapter } from '../core/adapter';
 import { JiraClient, JiraError, type FetchFn } from './client';
-import { childChunks, identityClause, scopeClause } from './jql';
+import { childChunks, chunk, identityClause, scopeClause } from './jql';
 import { fieldsForLevel, mapIssue, parentKeyOf, type MapOptions, type RawIssue } from './mappers';
 
 export interface JiraAdapterOptions {
@@ -130,6 +130,24 @@ export class JiraAdapter implements TrackerAdapter {
     return milestones;
   }
 
+  async fetchUpdated(
+    levelKey: 'requirement' | 'epic' | 'task',
+    keys: string[],
+    since: string,
+    profile: Profile,
+  ): Promise<Issue[]> {
+    const level = levelByKey(profile, levelKey);
+    if (!level || keys.length === 0) return [];
+    const fields = fieldsForLevel(level, this.mapOpts);
+    const sinceJql = formatJiraDate(since);
+    const out: Issue[] = [];
+    for (const ks of chunk(keys, 50)) {
+      const jql = `key IN (${ks.join(', ')}) AND updated >= "${sinceJql}"`;
+      for await (const raw of this.client.search(jql, fields)) out.push(mapIssue(raw, level, this.mapOpts));
+    }
+    return out;
+  }
+
   async updateEpic(key: string, patch: EpicPatch): Promise<void> {
     const fields: Record<string, unknown> = {};
     if (patch.summary !== undefined) fields.summary = patch.summary;
@@ -157,6 +175,14 @@ export class JiraAdapter implements TrackerAdapter {
     }
     await this.client.transition(key, match.id);
   }
+}
+
+/** Jira DC JQL date literal: "yyyy-MM-dd HH:mm". */
+function formatJiraDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '1970-01-01 00:00';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function memberEpics(

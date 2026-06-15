@@ -25,7 +25,7 @@ import type {
 import type { AppConfig } from './config';
 import type { TrackerAdapter } from './core/adapter';
 import { CacheRepo, type CoverageSnapshot } from './db/repositories';
-import { syncRoot } from './sync/engine';
+import { syncRoot, syncRootIncremental } from './sync/engine';
 import { buildHierarchy } from './sync/hierarchy';
 import { toContextMarkdown, toCoverageSummary, toJsonExport, toStaticHtml } from './export';
 
@@ -64,11 +64,11 @@ export class ExplorerService {
     return this.repo.coverageHistory(requirementKey);
   }
 
-  sync(rootKey: string): Promise<SyncResult> {
-    return syncRoot(rootKey, this.project.profile, this.project.scope, {
-      adapter: this.adapter,
-      repo: this.repo,
-    });
+  sync(rootKey: string, opts?: { incremental?: boolean }): Promise<SyncResult> {
+    const deps = { adapter: this.adapter, repo: this.repo };
+    return opts?.incremental
+      ? syncRootIncremental(rootKey, this.project.profile, this.project.scope, deps)
+      : syncRoot(rootKey, this.project.profile, this.project.scope, deps);
   }
 
   async updateEpic(

@@ -205,6 +205,54 @@ export class CacheRepo {
       .all(requirementKey, limit) as CoverageSnapshot[];
   }
 
+  /** Most recent sync timestamp for a root, or null if never synced. */
+  lastSyncedAt(rootKey: string): string | null {
+    const row = this.db
+      .prepare('SELECT MAX(synced_at) as ts FROM sync_runs WHERE root_key = ?')
+      .get(rootKey) as { ts: string | null } | undefined;
+    return row?.ts ?? null;
+  }
+
+  /** All cached issue keys for a root. */
+  allKeys(rootKey: string): string[] {
+    return (this.db.prepare('SELECT key FROM issues WHERE root_key = ?').all(rootKey) as Array<{ key: string }>).map(
+      (r) => r.key,
+    );
+  }
+
+  /**
+   * Incremental refresh: UPDATE the mutable fields of issues that already exist under `rootKey`.
+   * Issues whose key isn't already cached are ignored (new issues need a full sync). Returns the
+   * number of rows updated. Structure (links/milestones) is untouched.
+   */
+  refreshIssues(rootKey: string, issues: Issue[]): number {
+    const upd = this.db.prepare(
+      `UPDATE issues SET summary=?, status=?, status_category=?, assignee_json=?, delivery_date=?,
+       description=?, labels_json=?, acceptance_criteria_json=?, updated=? WHERE key=? AND root_key=?`,
+    );
+    let n = 0;
+    const tx = this.db.transaction(() => {
+      for (const it of issues) {
+        const r = upd.run(
+          it.summary,
+          it.status,
+          it.statusCategory,
+          it.assignee ? JSON.stringify(it.assignee) : null,
+          it.deliveryDate ?? null,
+          it.description ?? null,
+          JSON.stringify(it.labels),
+          JSON.stringify(it.acceptanceCriteria),
+          it.updated,
+          it.key,
+          rootKey,
+        );
+        n += r.changes;
+      }
+    });
+    tx();
+    return n;
+  }
+
   recordSyncRun(result: SyncResult): void {
     this.db
       .prepare(

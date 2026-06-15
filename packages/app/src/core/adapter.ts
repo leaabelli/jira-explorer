@@ -55,6 +55,19 @@ export interface TrackerAdapter {
   /** milestones linking to the given epics (overlay) */
   fetchMilestones(epicKeys: string[], profile: Profile, scope: Scope): Promise<Milestone[]>;
 
+  /**
+   * Re-fetch only the issues among `keys` that changed at/after `since` (ISO). Used by incremental
+   * refresh to update known issues' fields cheaply; it does NOT discover new / deleted / moved
+   * issues — those still require a full sync.
+   */
+  fetchUpdated(
+    levelKey: 'requirement' | 'epic' | 'task',
+    keys: string[],
+    since: string,
+    profile: Profile,
+    scope: Scope,
+  ): Promise<Issue[]>;
+
   /** write-back: patch editable epic fields */
   updateEpic(key: string, patch: EpicPatch): Promise<void>;
 

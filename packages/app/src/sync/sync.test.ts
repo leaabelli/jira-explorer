@@ -16,7 +16,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { DEFAULT_PROFILE, scopeSchema, type Issue } from '@jira-explorer/shared';
 import { createDb, type DB } from '../db/sqlite';
 import { CacheRepo } from '../db/repositories';
-import { syncRoot, RootNotFoundError } from './engine';
+import { syncRoot, syncRootIncremental, RootNotFoundError } from './engine';
 import { buildHierarchy } from './hierarchy';
 import type { TrackerAdapter } from '../core/adapter';
 
@@ -71,6 +71,11 @@ class FakeAdapter implements TrackerAdapter {
   }
   async fetchMilestones() {
     return [{ key: 'M1', name: 'Q3', dueDate: '2026-09-30', epicKeys: ['E1'], url: 'http://j/M1' }];
+  }
+  /** issues to return from the next incremental fetchUpdated (by level) */
+  updates: Issue[] = [];
+  async fetchUpdated(levelKey: 'requirement' | 'epic' | 'task') {
+    return this.updates.filter((i) => i.level === levelKey);
   }
   async updateEpic() {}
   async transitionIssue() {}
@@ -129,5 +134,29 @@ describe('syncRoot + buildHierarchy', () => {
     await syncRoot('R1', DEFAULT_PROFILE, scope, deps);
     await syncRoot('R1', DEFAULT_PROFILE, scope, { ...deps, now: () => 'T1' });
     expect(repo.coverageHistory('R1')).toHaveLength(2);
+  });
+
+  it('incremental refresh updates changed fields, leaves structure, ignores unknown keys', async () => {
+    const adapter = new FakeAdapter();
+    await syncRoot('R1', DEFAULT_PROFILE, scope, { adapter, repo, now: () => 'T0' });
+    expect(repo.getIssue('E1')?.status).toBe('Open');
+
+    // E1 changed status; an unknown key NEW-1 must be ignored (not added)
+    adapter.updates = [
+      mk('E1', 'epic', { status: 'Done', statusCategory: 'done', summary: 'E1 renamed' }),
+      mk('NEW-1', 'epic'),
+    ];
+    const result = await syncRootIncremental('R1', DEFAULT_PROFILE, scope, { adapter, repo, now: () => 'T1' });
+
+    expect(repo.getIssue('E1')).toMatchObject({ status: 'Done', summary: 'E1 renamed' });
+    expect(repo.getIssue('NEW-1')).toBeNull(); // not discovered incrementally
+    expect(result.issueCount).toBe(5); // structure unchanged
+    expect(repo.coverageHistory('R1')).toHaveLength(2); // a snapshot was recorded
+  });
+
+  it('incremental sync requires a prior full sync', async () => {
+    await expect(
+      syncRootIncremental('R1', DEFAULT_PROFILE, scope, { adapter: new FakeAdapter(), repo }),
+    ).rejects.toBeInstanceOf(RootNotFoundError);
   });
 });

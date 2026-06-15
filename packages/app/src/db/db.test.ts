@@ -93,4 +93,19 @@ describe('CacheRepo', () => {
     expect(hist[0]!.linkedEpicCount).toBe(3); // newest first
     expect(hist[1]!.linkedEpicCount).toBe(4);
   });
+
+  it('refreshIssues updates existing rows only (incremental) and reports lastSyncedAt', () => {
+    repo.replaceTree('R1', tree('R1'), 't1');
+    repo.recordSyncRun({ rootKey: 'R1', issueCount: 2, epicCount: 1, taskCount: 0, milestoneCount: 1, failedKeys: [], syncedAt: 't1' });
+    expect(repo.lastSyncedAt('R1')).toBe('t1');
+    expect(repo.allKeys('R1').sort()).toEqual(['E1', 'R1']);
+
+    const n = repo.refreshIssues('R1', [
+      issue('E1', { status: 'Done', statusCategory: 'done', summary: 'changed' }),
+      issue('GHOST', { summary: 'not cached' }),
+    ]);
+    expect(n).toBe(1); // only E1 existed
+    expect(repo.getIssue('E1')).toMatchObject({ status: 'Done', summary: 'changed' });
+    expect(repo.getIssue('GHOST')).toBeNull();
+  });
 });

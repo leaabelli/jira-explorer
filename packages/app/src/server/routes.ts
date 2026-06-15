@@ -93,7 +93,7 @@ export function buildRouter(workspace: Workspace): Router {
       if (!s) return;
       const rootKey = String(req.body?.rootKey ?? '').trim();
       if (!rootKey) return res.status(400).json({ error: 'rootKey is required', code: 'validation' });
-      const result = await s.sync(rootKey);
+      const result = await s.sync(rootKey, { incremental: Boolean(req.body?.incremental) });
       workspace.store.setLastSynced(req.params.id!, result.syncedAt);
       return res.json(result);
     }),
