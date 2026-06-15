@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { ApiError } from '@jira-explorer/shared';
+import type { ApiError } from '@criterio/shared';
 import { ZodError } from 'zod';
 import { JiraError } from '../jira/client';
 import { RootNotFoundError } from '../sync/engine';

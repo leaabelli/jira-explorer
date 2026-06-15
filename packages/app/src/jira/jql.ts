@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { IdentityRule, Level, ParentLink, Scope } from '@jira-explorer/shared';
+import type { IdentityRule, Level, ParentLink, Scope } from '@criterio/shared';
 
 // Pure JQL builders for the Jira DC adapter. Kept separate so they are unit-testable without
 // any HTTP. IN-clauses are chunked (eng-review D3) to stay under DC's JQL/URL limits.

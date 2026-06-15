@@ -22,7 +22,7 @@ import {
   scopeSchema,
   type Project,
   type ProjectInput,
-} from '@jira-explorer/shared';
+} from '@criterio/shared';
 import { decryptSecret, encryptSecret } from './crypto';
 
 interface Row {

@@ -21,7 +21,7 @@ import {
   type ConnectionStatus,
   type ProfileForm,
   type Project,
-} from '@jira-explorer/shared';
+} from '@criterio/shared';
 import { api, type ProjectInputBody } from '../api';
 
 // Modal to create/edit a project: connection, scope, and a STRUCTURED profile editor (the AC

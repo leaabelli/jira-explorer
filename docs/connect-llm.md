@@ -1,6 +1,6 @@
-# Connect Jira Explorer to your LLM
+# Connect Criterio to your LLM
 
-This guide gets an AI assistant talking to Jira Explorer over MCP, so it can read your requirement
+This guide gets an AI assistant talking to Criterio over MCP, so it can read your requirement
 trees, run the coverage check, and (optionally) write changes back to Jira. Three steps:
 **1) get a token → 2) run the connector → 3) add it to your client.**
 
@@ -45,15 +45,15 @@ JIRA_BASE_URL=https://jira.your-company.com JIRA_PAT=xxxxx npm run mcp:stdio
 
 HTTP (recommended — same cache as the UI):
 ```bash
-claude mcp add --transport http jira-explorer http://localhost:3000/mcp
+claude mcp add --transport http criterio http://localhost:3000/mcp
 ```
 
 or stdio (Claude Code launches it; substitute the absolute path):
 ```bash
-claude mcp add jira-explorer \
+claude mcp add criterio \
   --env JIRA_BASE_URL=https://jira.your-company.com \
   --env JIRA_PAT=xxxxx \
-  -- npx tsx /ABSOLUTE/PATH/TO/jira-explorer/packages/app/src/mcp/stdio.ts
+  -- npx tsx /ABSOLUTE/PATH/TO/criterio/packages/app/src/mcp/stdio.ts
 ```
 Verify with `claude mcp list`. (Run `claude mcp add --help` if flags differ in your version.)
 
@@ -63,13 +63,13 @@ Edit `claude_desktop_config.json` (Settings → Developer → Edit Config):
 ```json
 {
   "mcpServers": {
-    "jira-explorer": {
+    "criterio": {
       "command": "npx",
-      "args": ["tsx", "/ABSOLUTE/PATH/TO/jira-explorer/packages/app/src/mcp/stdio.ts"],
+      "args": ["tsx", "/ABSOLUTE/PATH/TO/criterio/packages/app/src/mcp/stdio.ts"],
       "env": {
         "JIRA_BASE_URL": "https://jira.your-company.com",
         "JIRA_PAT": "your-personal-access-token",
-        "DATA_DIR": "/ABSOLUTE/PATH/TO/jira-explorer/data",
+        "DATA_DIR": "/ABSOLUTE/PATH/TO/criterio/data",
         "MCP_ALLOW_WRITE": "true",
         "MCP_APPLY_TO_JIRA": "false"
       }
@@ -83,7 +83,7 @@ Restart Claude Desktop; the tools appear under the 🔌 menu.
 
 Point the client at the HTTP endpoint:
 ```json
-{ "mcpServers": { "jira-explorer": { "url": "http://localhost:3000/mcp" } } }
+{ "mcpServers": { "criterio": { "url": "http://localhost:3000/mcp" } } }
 ```
 
 ---
@@ -92,7 +92,7 @@ Point the client at the HTTP endpoint:
 
 Ask your assistant:
 
-> "List my Jira Explorer projects, sync requirement **PLAT-1042**, then check whether its epics
+> "List my Criterio projects, sync requirement **PLAT-1042**, then check whether its epics
 > cover every acceptance criterion and cite the epics."
 
 Under the hood it calls `list_projects` → `sync` → `get_requirement_coverage`, then reasons over the

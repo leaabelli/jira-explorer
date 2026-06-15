@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_PROFILE, scopeSchema } from '@jira-explorer/shared';
+import { DEFAULT_PROFILE, scopeSchema } from '@criterio/shared';
 import { JiraAdapter } from './adapter';
 import type { FetchFn } from './client';
 

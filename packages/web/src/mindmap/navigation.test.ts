@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { Hierarchy, HierarchyNode, Issue } from '@jira-explorer/shared';
+import type { Hierarchy, HierarchyNode, Issue } from '@criterio/shared';
 import { navigate, dirForKey } from './navigation';
 
 const issue = (key: string, level: Issue['level']): Issue => ({

@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-// @jira-explorer/shared — browser-safe domain types, Zod schemas, and API DTOs.
+// @criterio/shared — browser-safe domain types, Zod schemas, and API DTOs.
 // MUST NOT import node-only deps (used by core, mcp, server, AND the web bundle).
 
 export const SHARED_VERSION = '0.1.0';

@@ -12,7 +12,7 @@ interaction states first. Pick up before a 1.0 / wider OSS release.
 - Remaining polish (smaller follow-up): `/` to focus the root input, roving-tabindex inside
   the tree, and announcing selection changes via an aria-live region.
 
-### T-PROFILE-EDITOR — Structured visual profile editor
+### T-PROFILE-EDITOR — Structured visual profile editor ✅ done
 - **What:** The project settings panel edits the Profile as raw JSON (advanced). Add a structured
   editor: per-level issue types, parent-link kind (epic-link / issue-link + type + direction),
   the acceptance-criteria source (the O1 knob) as a dropdown, and the Epic-Link field id.
@@ -24,7 +24,7 @@ interaction states first. Pick up before a 1.0 / wider OSS release.
   `web/src/components/ProjectSettings.tsx` and `docs/sample-profile.json`.
 - **Depends on:** multi-project config UI (done).
 
-### T-INCREMENTAL-SYNC — Incremental refresh by `updated`
+### T-INCREMENTAL-SYNC — Incremental refresh by `updated` ✅ done
 - **What:** Replace full re-sync with an incremental path: track last-sync time, refresh via JQL
   `updated >= lastSync`, upsert only changes, and correctly reconcile deletions / scope changes /
   re-parenting.

@@ -28,4 +28,4 @@ workspace.seedFromEnv();
 const server = buildMcpServer(workspace, config);
 await server.connect(new StdioServerTransport());
 // eslint-disable-next-line no-console
-console.error('[jira-explorer] MCP stdio server ready');
+console.error('[criterio] MCP stdio server ready');

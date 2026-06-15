@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-// @jira-explorer/app — the node-only engine plus its REST + MCP adapters.
+// @criterio/app — the node-only engine plus its REST + MCP adapters.
 //
 // Internal folders (filled in from P1 onward):
 //   core/      domain types glue + the TrackerAdapter interface (the tracker-agnostic seam)

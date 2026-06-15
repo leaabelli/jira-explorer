@@ -20,7 +20,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@jira-explorer/shared': fileURLToPath(new URL('../shared/src/index.ts', import.meta.url)),
+      '@criterio/shared': fileURLToPath(new URL('../shared/src/index.ts', import.meta.url)),
     },
   },
   server: {

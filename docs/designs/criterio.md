@@ -1,4 +1,4 @@
-# Jira Explorer — Vision & Design
+# Criterio — Vision & Design
 
 > Why this exists, and where it's going. Promoted from a CEO/strategy review on 2026-06-13.
 

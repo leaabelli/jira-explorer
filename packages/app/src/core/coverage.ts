@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { CoverageProxy, Issue } from '@jira-explorer/shared';
+import type { CoverageProxy, Issue } from '@criterio/shared';
 
 // Deterministic coverage PROXY (eng-review D2). Acceptance criteria are not linkable in Jira,
 // so we never claim a per-criterion X/N here. We report: how many criteria the requirement has,

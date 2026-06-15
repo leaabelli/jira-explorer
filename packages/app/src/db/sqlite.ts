@@ -31,7 +31,7 @@ export function createDb(path: string): DB {
 /** Open the cache inside a data directory (creates the directory if needed). */
 export function openDb(dataDir: string): DB {
   mkdirSync(dataDir, { recursive: true });
-  return createDb(join(dataDir, 'jira-explorer.sqlite'));
+  return createDb(join(dataDir, 'criterio.sqlite'));
 }
 
 /** Open a per-project cache DB at <dataDir>/cache/<projectId>.sqlite. */

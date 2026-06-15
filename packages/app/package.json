@@ -1,5 +1,5 @@
 {
-  "name": "@jira-explorer/app",
+  "name": "@criterio/app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@jira-explorer/shared": "*",
+    "@criterio/shared": "*",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",

@@ -28,7 +28,7 @@ const err = (text: string) => ({ content: [{ type: 'text' as const, text }], isE
 const json = (v: unknown) => JSON.stringify(v, null, 2);
 
 export function buildMcpServer(workspace: Workspace, config: AppConfig): McpServer {
-  const server = new McpServer({ name: 'jira-explorer', version: '0.1.0' });
+  const server = new McpServer({ name: 'criterio', version: '0.1.0' });
   const writesAllowed = config.mcp.allowWrite;
 
   /** Resolve a project's service (defaults to the first project). */

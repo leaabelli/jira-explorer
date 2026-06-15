@@ -19,7 +19,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:
 // Format: base64(iv).base64(tag).base64(ciphertext)
 
 function deriveKey(secret: string): Buffer {
-  return scryptSync(secret, 'jira-explorer.pat.v1', 32);
+  return scryptSync(secret, 'criterio.pat.v1', 32);
 }
 
 export function encryptSecret(plain: string, secret: string): string {

@@ -1,5 +1,5 @@
 {
-  "name": "jira-explorer",
+  "name": "criterio",
   "version": "0.1.0",
   "private": true,
   "description": "Self-hosted, AI-native requirement-coverage explorer. Jira Data Center is the first tracker; the engine is tracker-agnostic.",
@@ -12,12 +12,12 @@
   "scripts": {
     "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch packages/app/src/server/index.ts",
-    "dev:web": "npm run dev -w @jira-explorer/web",
-    "build:web": "npm run build -w @jira-explorer/web",
+    "dev:web": "npm run dev -w @criterio/web",
+    "build:web": "npm run build -w @criterio/web",
     "serve": "npm run build:web && tsx packages/app/src/server/index.ts",
     "start": "tsx packages/app/src/server/index.ts",
     "mcp:stdio": "tsx packages/app/src/mcp/stdio.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck -w @jira-explorer/web",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck -w @criterio/web",
     "test": "vitest run",
     "format": "prettier --write .",
     "lint": "eslint ."

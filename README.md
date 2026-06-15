@@ -92,7 +92,7 @@ LLM ──MCP (stdio / HTTP)─────────────────�
 - Sync is batched JQL (chunked), full re-sync per run in one SQLite transaction; coverage history is
   kept for drift alerts.
 
-Design system: [DESIGN.md](DESIGN.md) · Architecture/vision: [docs/designs/jira-explorer.md](docs/designs/jira-explorer.md)
+Design system: [DESIGN.md](DESIGN.md) · Architecture/vision: [docs/designs/criterio.md](docs/designs/criterio.md)
 · Deferred work: [TODOS.md](TODOS.md).
 
 ## Status

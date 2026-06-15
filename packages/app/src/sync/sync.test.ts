@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEFAULT_PROFILE, scopeSchema, type Issue } from '@jira-explorer/shared';
+import { DEFAULT_PROFILE, scopeSchema, type Issue } from '@criterio/shared';
 import { createDb, type DB } from '../db/sqlite';
 import { CacheRepo } from '../db/repositories';
 import { syncRoot, syncRootIncremental, RootNotFoundError } from './engine';

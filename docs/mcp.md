@@ -1,4 +1,4 @@
-# Jira Explorer MCP Server
+# Criterio MCP Server
 
 The MCP (Model Context Protocol) server exposes the **requirement-coverage model** to an LLM —
 not raw Jira CRUD. An assistant can read your requirement tree, **verify whether your epics cover
@@ -32,14 +32,14 @@ Claude Desktop entry (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
-    "jira-explorer": {
+    "criterio": {
       "command": "npx",
       "args": ["tsx", "packages/app/src/mcp/stdio.ts"],
-      "cwd": "/absolute/path/to/jira-explorer",
+      "cwd": "/absolute/path/to/criterio",
       "env": {
         "JIRA_BASE_URL": "https://jira.your-company.com",
         "JIRA_PAT": "your-personal-access-token",
-        "DATA_DIR": "/absolute/path/to/jira-explorer/data",
+        "DATA_DIR": "/absolute/path/to/criterio/data",
         "MCP_ALLOW_WRITE": "true",
         "MCP_APPLY_TO_JIRA": "false"
       }

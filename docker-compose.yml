@@ -1,9 +1,9 @@
 services:
-  jira-explorer:
+  criterio:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: jira-explorer:local
+    image: criterio:local
     ports:
       - '3000:3000'
     environment:
@@ -20,8 +20,8 @@ services:
       MCP_ALLOW_WRITE: ${MCP_ALLOW_WRITE:-true}
       MCP_APPLY_TO_JIRA: ${MCP_APPLY_TO_JIRA:-false}
     volumes:
-      - jira-explorer-data:/data
+      - criterio-data:/data
     restart: unless-stopped
 
 volumes:
-  jira-explorer-data:
+  criterio-data:

@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Project, ProjectInput } from '@jira-explorer/shared';
+import type { Project, ProjectInput } from '@criterio/shared';
 import type { AppConfig } from './config';
 import { CacheRepo } from './db/repositories';
 import { ProjectStore } from './db/projects';

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_PROFILE, levelByKey, scopeSchema } from '@jira-explorer/shared';
+import { DEFAULT_PROFILE, levelByKey, scopeSchema } from '@criterio/shared';
 import { childChunks, identityClause, scopeClause, chunk, rootJql } from './jql';
 import { mapIssue, parentKeyOf, fieldsForLevel, type MapOptions } from './mappers';
 

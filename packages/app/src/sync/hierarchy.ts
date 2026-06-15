@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Hierarchy, HierarchyNode, Issue } from '@jira-explorer/shared';
+import type { Hierarchy, HierarchyNode, Issue } from '@criterio/shared';
 import { computeCoverageProxy } from '../core/coverage';
 import type { StoredTree } from '../db/repositories';
 

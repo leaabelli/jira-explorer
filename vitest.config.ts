@@ -20,8 +20,8 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      '@jira-explorer/shared': r('./packages/shared/src/index.ts'),
-      '@jira-explorer/app': r('./packages/app/src/index.ts'),
+      '@criterio/shared': r('./packages/shared/src/index.ts'),
+      '@criterio/app': r('./packages/app/src/index.ts'),
     },
   },
   test: {

@@ -20,7 +20,7 @@ import type {
   Milestone,
   Profile,
   Scope,
-} from '@jira-explorer/shared';
+} from '@criterio/shared';
 
 // The tracker-agnostic seam (CEO-review D1). The sync engine orchestrates traversal in terms
 // of this interface; a concrete adapter (Jira DC first) owns all tracker-specific concerns:

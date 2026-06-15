@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { Hierarchy, Issue } from '@jira-explorer/shared';
+import type { Hierarchy, Issue } from '@criterio/shared';
 import { toContextMarkdown, toCoverageSummary, toJsonExport, toStaticHtml } from './index';
 
 const issue = (key: string, level: Issue['level'], over: Partial<Issue> = {}): Issue => ({

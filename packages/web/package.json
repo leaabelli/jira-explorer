@@ -1,5 +1,5 @@
 {
-  "name": "@jira-explorer/web",
+  "name": "@criterio/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
-    "@jira-explorer/shared": "*",
+    "@criterio/shared": "*",
     "@tanstack/react-query": "^5.62.7",
     "@xyflow/react": "^12.3.6",
     "react": "^18.3.1",

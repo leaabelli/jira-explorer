@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseAcceptanceCriteria } from './acceptance-criteria';
 import { computeCoverageProxy } from './coverage';
-import type { Issue } from '@jira-explorer/shared';
+import type { Issue } from '@criterio/shared';
 
 const issue = (over: Partial<Issue>): Issue => ({
   key: 'PLAT-1',

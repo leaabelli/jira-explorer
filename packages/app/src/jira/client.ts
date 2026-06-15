@@ -13,7 +13,7 @@
  */
 
 import pLimit from 'p-limit';
-import type { ApiError } from '@jira-explorer/shared';
+import type { ApiError } from '@criterio/shared';
 import type { RawIssue } from './mappers';
 
 // Low-level Jira DC REST v2 client: PAT bearer auth, concurrency-limited, retry/backoff on

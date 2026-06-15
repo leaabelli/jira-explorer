@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Hierarchy, HierarchyNode } from '@jira-explorer/shared';
+import type { Hierarchy, HierarchyNode } from '@criterio/shared';
 
 // Pure keyboard navigation over the requirement tree (T-A11Y). Arrow keys map to tree moves:
 //   →/child : first child   ←/parent : parent   ↓/next : next sibling   ↑/prev : prev sibling

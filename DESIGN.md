@@ -1,4 +1,4 @@
-# Jira Explorer — Design System
+# Criterio — Design System
 
 Seeded from the approved mindmap mockup (2026-06-13) via `/plan-design-review`.
 Approved reference image: `~/.gstack/projects/jira-explorer/designs/mindmap-canvas-20260613/mindmap-mock.png`

@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Issue } from '@jira-explorer/shared';
+import type { Issue } from '@criterio/shared';
 import { loadConfig } from '../config';
 import { ProjectStore } from '../db/projects';
 import { Workspace } from '../workspace';

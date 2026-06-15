@@ -14,10 +14,10 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "@jira-explorer/shared": ["packages/shared/src/index.ts"],
-      "@jira-explorer/shared/*": ["packages/shared/src/*"],
-      "@jira-explorer/app": ["packages/app/src/index.ts"],
-      "@jira-explorer/app/*": ["packages/app/src/*"]
+      "@criterio/shared": ["packages/shared/src/index.ts"],
+      "@criterio/shared/*": ["packages/shared/src/*"],
+      "@criterio/app": ["packages/app/src/index.ts"],
+      "@criterio/app/*": ["packages/app/src/*"]
     }
   }
 }

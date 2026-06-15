@@ -64,5 +64,5 @@ if (existsSync(webDist)) {
 
 app.listen(config.port, () => {
   // eslint-disable-next-line no-console
-  console.log(`[jira-explorer] server listening on http://localhost:${config.port}`);
+  console.log(`[criterio] server listening on http://localhost:${config.port}`);
 });

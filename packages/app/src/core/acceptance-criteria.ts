@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { AcceptanceCriteriaSource, AcceptanceCriterion } from '@jira-explorer/shared';
+import type { AcceptanceCriteriaSource, AcceptanceCriterion } from '@criterio/shared';
 
 // Extract acceptance criteria from a requirement, per the Profile's configured source (O1).
 // Pure and heavily tested: this is the load-bearing unknown, so it must degrade gracefully

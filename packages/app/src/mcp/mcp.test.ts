@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import type { Issue } from '@jira-explorer/shared';
+import type { Issue } from '@criterio/shared';
 import type { AppConfig } from '../config';
 import type { StoredTree } from '../db/repositories';
 import { computeCoverageProxy } from '../core/coverage';

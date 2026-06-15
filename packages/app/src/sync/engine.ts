@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-import type { Profile, Scope, SyncResult } from '@jira-explorer/shared';
+import type { Profile, Scope, SyncResult } from '@criterio/shared';
 import type { TrackerAdapter } from '../core/adapter';
 import { computeCoverageProxy } from '../core/coverage';
 import type { CacheRepo, StoredTree } from '../db/repositories';
